@@ -1,0 +1,475 @@
+using System;
+using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
+using System.Windows.Threading;
+using Application = System.Windows.Application;
+using Hardcodet.Wpf.TaskbarNotification;
+
+namespace GaokaoCountdown
+{
+    public partial class MainWindow : Window
+    {
+        private DispatcherTimer? timer;
+        private TaskbarIcon? notifyIcon;
+        private AppSettings settings;
+
+        // ── 动态日期 ───────────────────────────────────────────
+        private DateTime gaokaoDate;
+        private DateTime startDate;
+
+        // ── Win32 API ─────────────────────────────────────────
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+            int X, int Y, int cx, int cy, uint uFlags);
+
+        private static readonly IntPtr HWND_BOTTOM    = new IntPtr(1);
+        private static readonly IntPtr HWND_TOPMOST  = new IntPtr(-1);
+        private const uint SWP_NOSIZE    = 0x0001;
+        private const uint SWP_NOMOVE    = 0x0002;
+        private const uint SWP_NOACTIVATE = 0x0010;
+
+        // 基准尺寸
+        private const int BaseFontSize     = 40;
+        private const int BaseWindowWidth  = 850;
+        private const int BaseWindowHeight = 150;
+
+        // ── 上次 tick 的值（用于判断是否需要脉冲动画） ──
+        private int _lastDays, _lastHours, _lastMinutes, _lastSeconds;
+
+        // ── 设置代理属性 ─────────────────────────────────────
+        public string ChinesePrefix      { get => settings.ChinesePrefix;      set => settings.ChinesePrefix      = value; }
+        public string ChineseDaysText    { get => settings.ChineseDaysText;    set => settings.ChineseDaysText    = value; }
+        public string ChineseHoursText   { get => settings.ChineseHoursText;   set => settings.ChineseHoursText   = value; }
+        public string ChineseMinutesText { get => settings.ChineseMinutesText; set => settings.ChineseMinutesText = value; }
+        public string ChineseSecondsText { get => settings.ChineseSecondsText; set => settings.ChineseSecondsText = value; }
+
+        public string EnglishPrefix      { get => settings.EnglishPrefix;      set => settings.EnglishPrefix      = value; }
+        public string EnglishDaysText    { get => settings.EnglishDaysText;    set => settings.EnglishDaysText    = value; }
+        public string EnglishHoursText   { get => settings.EnglishHoursText;   set => settings.EnglishHoursText   = value; }
+        public string EnglishMinutesText { get => settings.EnglishMinutesText; set => settings.EnglishMinutesText = value; }
+        public string EnglishSecondsText { get => settings.EnglishSecondsText; set => settings.EnglishSecondsText = value; }
+
+        public FontFamily CountdownFontFamily { get; set; }
+        public int    CountdownFontSize { get => settings.FontSize;         set => settings.FontSize         = value; }
+        public Color  NumberColor       { get => settings.NumberColor;      set => settings.NumberColor      = value; }
+        public Color  TextColor         { get => settings.TextColor;        set => settings.TextColor        = value; }
+        public Color  ProgressBarColor  { get => settings.ProgressBarColor; set => settings.ProgressBarColor = value; }
+
+        public bool   ShowEnglishLine  { get => settings.ShowEnglishLine;  set => settings.ShowEnglishLine  = value; }
+        public bool   ShowProgressBar  { get => settings.ShowProgressBar;  set => settings.ShowProgressBar  = value; }
+        public bool   ShowProgressText { get => settings.ShowProgressText; set => settings.ShowProgressText = value; }
+        public double OverallOpacity   { get => settings.OverallOpacity;   set => settings.OverallOpacity   = value; }
+
+        public int    PositionPreset   { get => settings.PositionPreset;   set => settings.PositionPreset   = value; }
+        public double CustomPositionX  { get => settings.CustomPositionX;  set => settings.CustomPositionX  = value; }
+        public double CustomPositionY  { get => settings.CustomPositionY;  set => settings.CustomPositionY  = value; }
+        public double PositionOffsetY  { get => settings.PositionOffsetY;  set => settings.PositionOffsetY  = value; }
+        public bool   AlwaysOnTop      { get => settings.AlwaysOnTop;      set => settings.AlwaysOnTop      = value; }
+
+        public string GaokaoDateStr    { get => settings.GaokaoDateStr;    set => settings.GaokaoDateStr    = value; }
+        public string StartDateStr     { get => settings.StartDateStr;     set => settings.StartDateStr     = value; }
+        public int    ProgressDecimalDigits { get => settings.ProgressDecimalDigits; set => settings.ProgressDecimalDigits = value; }
+        public bool   EnableAnimations { get => settings.EnableAnimations; set => settings.EnableAnimations = value; }
+
+        // ── 进度条动画用：记录目标值 ────────────────────────
+
+
+        // ── 构造函数 ───────────────────────────────────────────
+        public MainWindow()
+        {
+            settings = AppSettings.Load();
+            CountdownFontFamily = new FontFamily(settings.FontFamily);
+            RefreshDateFields();
+
+            InitializeComponent();
+            SetupTrayIcon();
+            SetupTimer();
+            UpdateCountdown();
+            PositionWindow();
+            UpdateCountdownDisplay();
+        }
+
+        public void RefreshDateFields()
+        {
+            if (!DateTime.TryParse(settings.GaokaoDateStr, out gaokaoDate))
+                gaokaoDate = new DateTime(2027, 6, 7, 9, 0, 0);
+            if (!DateTime.TryParse(settings.StartDateStr, out startDate))
+                startDate = new DateTime(2024, 8, 24);
+        }
+
+        // ── 保存 ───────────────────────────────────────────────
+        public void SaveSettings()
+        {
+            settings.FontFamily         = CountdownFontFamily.Source;
+            settings.NumberColorHex    = NumberColor.ToString();
+            settings.TextColorHex      = TextColor.ToString();
+            settings.ProgressBarColorHex = ProgressBarColor.ToString();
+            settings.Save();
+        }
+
+        // ── 托盘图标 ───────────────────────────────────────────
+        private void SetupTrayIcon()
+        {
+            notifyIcon = new TaskbarIcon();
+            notifyIcon.ToolTipText = "高考倒计时";
+            var contextMenu = new ContextMenu();
+            var showHideItem = new MenuItem { Header = "显示 / 隐藏" };
+            showHideItem.Click += (s, e) => ToggleVisibility();
+            var settingsItem = new MenuItem { Header = "设置" };
+            settingsItem.Click += (s, e) => OpenSettings();
+            var exitItem = new MenuItem { Header = "退出" };
+            exitItem.Click += (s, e) => ExitApplication();
+            contextMenu.Items.Add(showHideItem);
+            contextMenu.Items.Add(settingsItem);
+            contextMenu.Items.Add(new Separator());
+            contextMenu.Items.Add(exitItem);
+            notifyIcon.ContextMenu = contextMenu;
+            notifyIcon.TrayMouseDoubleClick += (s, e) => ToggleVisibility();
+        }
+
+        private void ToggleVisibility()
+        {
+            if (Visibility == Visibility.Visible) { Hide(); }
+            else { Show(); Activate(); ApplyWindowLayer(); }
+        }
+
+        private void OpenSettings()
+        {
+            var sw = new SettingWindow(this);
+            sw.Owner = this;
+            sw.ShowDialog();
+        }
+
+        private void ExitApplication()
+        {
+            notifyIcon?.Dispose();
+            Application.Current.Shutdown();
+        }
+
+        // ── 窗口层级 ───────────────────────────────────────────
+        public void ApplyWindowLayer()
+        {
+            var hwnd = new WindowInteropHelper(this).Handle;
+            if (AlwaysOnTop)
+            {
+                Topmost = true;
+                SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
+            else
+            {
+                Topmost = false;
+                SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
+            }
+        }
+
+        // ── 定时器 ─────────────────────────────────────────────
+        private void SetupTimer()
+        {
+            timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromSeconds(1);
+            timer.Tick += (s, e) => UpdateCountdown();
+            timer.Start();
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  每秒触发：更新倒计时数字 + 动画
+        // ══════════════════════════════════════════════════════
+        private void UpdateCountdown()
+        {
+            DateTime now = DateTime.Now;
+            TimeSpan timeLeft = gaokaoDate - now;
+
+            int days    = timeLeft.TotalSeconds > 0 ? timeLeft.Days      : 0;
+            int hours   = timeLeft.TotalSeconds > 0 ? timeLeft.Hours     : 0;
+            int minutes = timeLeft.TotalSeconds > 0 ? timeLeft.Minutes   : 0;
+            int seconds = timeLeft.TotalSeconds > 0 ? timeLeft.Seconds   : 0;
+
+            // ── 更新数字文本（中文）─────────────────────────────
+            DaysTb.Text    = days.ToString();
+            HoursTb.Text   = hours.ToString("00");
+            MinutesTb.Text = minutes.ToString("00");
+            SecondsTb.Text = seconds.ToString("00");
+
+            // ── 更新数字文本（英文）─────────────────────────────
+            DaysEnTb.Text    = days.ToString();
+            HoursEnTb.Text   = hours.ToString("00");
+            MinutesEnTb.Text = minutes.ToString("00");
+            SecondsEnTb.Text = seconds.ToString("00");
+
+            // ── 脉冲动画：仅当值变化时触发 ─────────────────────
+            if (EnableAnimations)
+            {
+                if (days != _lastDays)    PulseNumber(DaysTb,    true);
+                if (hours != _lastHours)  PulseNumber(HoursTb,   true);
+                if (minutes != _lastMinutes) PulseNumber(MinutesTb, true);
+                PulseNumber(SecondsTb, false);
+
+                if (days != _lastDays)    PulseNumber(DaysEnTb,    false);
+                if (hours != _lastHours)  PulseNumber(HoursEnTb,   false);
+                if (minutes != _lastMinutes) PulseNumber(MinutesEnTb, false);
+                PulseNumber(SecondsEnTb, false);
+            }
+
+            _lastDays    = days;
+            _lastHours   = hours;
+            _lastMinutes = minutes;
+            _lastSeconds = seconds;
+
+            if (timeLeft.TotalSeconds <= 0)
+                timer?.Stop();
+
+            // ── 进度 ───────────────────────────────────────────────
+            double totalDays   = (gaokaoDate - startDate).TotalDays;
+            double daysPassed  = (now - startDate).TotalDays;
+            double progress    = Math.Min(1, Math.Max(0, daysPassed / totalDays));
+            ProgressBar.Value  = progress * 100;
+
+            string fmt = "F" + ProgressDecimalDigits;
+            double pct = progress * 100.0;
+            ProgressText.Text   = $"高中生活已过去 {pct.ToString(fmt)}%";
+            ProgressTextEn.Text = $"High school life has passed {pct.ToString(fmt)}%.";
+
+            // 字体同步
+            ProgressText.FontFamily   = CountdownFontFamily;
+            ProgressTextEn.FontFamily = CountdownFontFamily;
+
+            UpdateCountdownDisplay();
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  数字脉冲动画：缩放 + 透明度（轻量、流畅、不卡 GPU）
+        //  去除 DropShadowEffect 动画（BlurRadius 极吃 GPU）
+        // ══════════════════════════════════════════════════════
+        private void PulseNumber(TextBlock tb, bool isChinese)
+        {
+            if (tb.RenderTransform is not ScaleTransform st) return;
+
+            // 先停止上一次同属性的动画，避免叠加冲突
+            st.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            st.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            tb.BeginAnimation(TextBlock.OpacityProperty,  null);
+
+            // ── 缩放：1 → 1.08 → 1（三段关键帧 + SineEase）──
+            var scaleAnim = new DoubleAnimationUsingKeyFrames();
+            scaleAnim.KeyFrames.Add(new LinearDoubleKeyFrame(1,    TimeSpan.Zero));
+            scaleAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1.08, TimeSpan.FromMilliseconds(100))
+            {
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut }
+            });
+            scaleAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1,    TimeSpan.FromMilliseconds(250))
+            {
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseIn }
+            });
+
+            // ── 透明度：1 → 0.72 → 1 ──────────────────────────
+            var opAnim = new DoubleAnimationUsingKeyFrames();
+            opAnim.KeyFrames.Add(new LinearDoubleKeyFrame(1,    TimeSpan.Zero));
+            opAnim.KeyFrames.Add(new EasingDoubleKeyFrame(0.72, TimeSpan.FromMilliseconds(100))
+            {
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseOut }
+            });
+            opAnim.KeyFrames.Add(new EasingDoubleKeyFrame(1,    TimeSpan.FromMilliseconds(250))
+            {
+                EasingFunction = new SineEase { EasingMode = EasingMode.EaseIn }
+            });
+
+            st.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+            st.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+            tb.BeginAnimation(TextBlock.OpacityProperty,  opAnim);
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  刷新所有静态显示（文本/颜色/字体/显隐）
+        // ══════════════════════════════════════════════════════
+        public void UpdateCountdownDisplay()
+        {
+            // ── 文本内容 ──────────────────────────────────────────
+            ChinesePrefixTb.Text = ChinesePrefix;
+            ChineseDaysTb.Text   = ChineseDaysText;
+            ChineseHoursTb.Text  = ChineseHoursText;
+            ChineseMinutesTb.Text = ChineseMinutesText;
+            ChineseSecondsTb.Text = ChineseSecondsText;
+
+            EnglishPrefixTb.Text  = EnglishPrefix;
+            EnglishDaysTb.Text    = EnglishDaysText;
+            EnglishHoursTb.Text   = EnglishHoursText;
+            EnglishMinutesTb.Text = EnglishMinutesText;
+            EnglishSecondsTb.Text = EnglishSecondsText;
+
+            // ── 颜色刷 ──────────────────────────────────────────
+            var textBrush   = new SolidColorBrush(TextColor);
+            var numberBrush = new SolidColorBrush(NumberColor);
+
+            ChinesePrefixTb.Foreground  = textBrush;
+            ChineseDaysTb.Foreground    = textBrush;
+            ChineseHoursTb.Foreground   = textBrush;
+            ChineseMinutesTb.Foreground = textBrush;
+            ChineseSecondsTb.Foreground = textBrush;
+
+            EnglishPrefixTb.Foreground  = textBrush;
+            EnglishDaysTb.Foreground    = textBrush;
+            EnglishHoursTb.Foreground   = textBrush;
+            EnglishMinutesTb.Foreground = textBrush;
+            EnglishSecondsTb.Foreground = textBrush;
+
+            DaysTb.Foreground    = numberBrush;
+            HoursTb.Foreground   = numberBrush;
+            MinutesTb.Foreground = numberBrush;
+            SecondsTb.Foreground = numberBrush;
+
+            DaysEnTb.Foreground    = numberBrush;
+            HoursEnTb.Foreground   = numberBrush;
+            MinutesEnTb.Foreground = numberBrush;
+            SecondsEnTb.Foreground = numberBrush;
+
+            // 发光颜色同步
+            if (DaysTb.Effect is DropShadowEffect g1)     g1.Color = NumberColor;
+            if (HoursTb.Effect is DropShadowEffect g2)    g2.Color = NumberColor;
+            if (MinutesTb.Effect is DropShadowEffect g3)  g3.Color = NumberColor;
+            if (SecondsTb.Effect is DropShadowEffect g4)  g4.Color = NumberColor;
+
+            ProgressText.Foreground   = textBrush;
+            ProgressTextEn.Foreground = textBrush;
+
+            // ── 进度条颜色 & 发光 ──────────────────────────────
+            ProgressBar.Foreground = new SolidColorBrush(ProgressBarColor);
+            if (ProgressBar.Effect is DropShadowEffect pg)
+                pg.Color = ProgressBarColor;
+
+            // ── 字体与大小 ──────────────────────────────────────
+            ChinesePanel.Children.OfType<TextBlock>().ToList().ForEach(tb =>
+            {
+                tb.FontFamily = CountdownFontFamily;
+                if (tb == DaysTb || tb == HoursTb || tb == MinutesTb || tb == SecondsTb)
+                    tb.FontSize = CountdownFontSize;
+                else
+                    tb.FontSize = CountdownFontSize;
+            });
+            EnglishPanel.Children.OfType<TextBlock>().ToList().ForEach(tb =>
+            {
+                tb.FontFamily = CountdownFontFamily;
+            });
+            // 直接设置数字块字号（中文行）
+            DaysTb.FontSize    = CountdownFontSize;
+            HoursTb.FontSize   = CountdownFontSize;
+            MinutesTb.FontSize = CountdownFontSize;
+            SecondsTb.FontSize = CountdownFontSize;
+            // 文字块字号（中文行）
+            ChinesePrefixTb.FontSize = CountdownFontSize;
+            ChineseDaysTb.FontSize   = CountdownFontSize;
+            ChineseHoursTb.FontSize  = CountdownFontSize;
+            ChineseMinutesTb.FontSize = CountdownFontSize;
+            ChineseSecondsTb.FontSize = CountdownFontSize;
+
+            // 英文行字号
+            double enSize = CountdownFontSize * 0.4;
+            DaysEnTb.FontSize    = enSize;
+            HoursEnTb.FontSize   = enSize;
+            MinutesEnTb.FontSize = enSize;
+            SecondsEnTb.FontSize = enSize;
+            EnglishPrefixTb.FontSize  = enSize;
+            EnglishDaysTb.FontSize    = enSize;
+            EnglishHoursTb.FontSize   = enSize;
+            EnglishMinutesTb.FontSize = enSize;
+            EnglishSecondsTb.FontSize = enSize;
+
+            ProgressText.FontSize   = CountdownFontSize * 0.25;
+            ProgressTextEn.FontSize = ProgressText.FontSize * 0.9;
+            ProgressText.FontFamily   = CountdownFontFamily;
+            ProgressTextEn.FontFamily = CountdownFontFamily;
+
+            // 更新缩放中心（动态字号时居中）
+            UpdateScaleCenters();
+
+            // ── 显示 / 隐藏行 ──────────────────────────────────
+            ChinesePanel.Visibility = Visibility.Visible;  // 中文行始终可见（现在是用户主要信息）
+            EnglishPanel.Visibility = ShowEnglishLine ? Visibility.Visible : Visibility.Collapsed;
+            ProgressBar.Visibility = ShowProgressBar  ? Visibility.Visible : Visibility.Collapsed;
+            ProgressText.Visibility    = ShowProgressText ? Visibility.Visible : Visibility.Collapsed;
+            ProgressTextEn.Visibility = (ShowProgressText && ShowEnglishLine) ? Visibility.Visible : Visibility.Collapsed;
+
+            // ── 透明度 ──────────────────────────────────────────
+            this.Opacity = Math.Clamp(OverallOpacity, 0.1, 1.0);
+
+            // ── 窗口尺寸自适应 ──────────────────────────────────
+            double scaleFactor = (double)CountdownFontSize / BaseFontSize;
+            this.Width  = BaseWindowWidth  * scaleFactor;
+            this.Height = BaseWindowHeight * scaleFactor * 1.4;
+            ProgressBar.Height = 9 * scaleFactor;
+
+            // ── 重新定位 ──────────────────────────────────────────
+            PositionWindow();
+        }
+
+        /// <summary>动态更新所有数字 TextBlock 的缩放中心，使其居中</summary>
+        private void UpdateScaleCenters()
+        {
+            foreach (var tb in new[] { DaysTb, HoursTb, MinutesTb, SecondsTb, DaysEnTb, HoursEnTb, MinutesEnTb, SecondsEnTb })
+            {
+                // 用 ActualWidth/ActualHeight 的一半作为中心
+                // 但动画运行时可能 ActualWidth 不准确，用期望字号的一半近似
+                double cx = (tb.FontSize) / 2.0;
+                double cy = (tb.FontSize) / 2.0;
+                if (tb.RenderTransform is ScaleTransform st)
+                {
+                    st.CenterX = cx;
+                    st.CenterY = cy;
+                    st.ScaleX = 1;
+                    st.ScaleY = 1;
+                }
+            }
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  窗口定位
+        // ══════════════════════════════════════════════════════
+        public void PositionWindow()
+        {
+            double sw = SystemParameters.PrimaryScreenWidth;
+            double sh = SystemParameters.PrimaryScreenHeight;
+            double x, y;
+
+            if (PositionPreset == 5 && CustomPositionX >= 0 && CustomPositionY >= 0)
+            {
+                Left = CustomPositionX;
+                Top  = CustomPositionY;
+                return;
+            }
+
+            x = (sw - Width) / 2;
+            switch (PositionPreset)
+            {
+                case 0: y = 10; break;
+                case 1: y = sh / 25.0; break;
+                case 2: y = (sh - Height) / 2; break;
+                case 3: y = sh * 0.65; break;
+                case 4: y = sh - Height - 40; break;
+                default: y = sh / 25.0; break;
+            }
+            Left = x;
+            Top  = y + PositionOffsetY;
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  事件
+        // ══════════════════════════════════════════════════════
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            ApplyWindowLayer();
+            // 初始进度条已由 UpdateCountdown 设置
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = true;
+            Hide();
+        }
+    }
+}

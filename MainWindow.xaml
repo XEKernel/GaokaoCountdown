@@ -1,0 +1,125 @@
+<Window x:Class="GaokaoCountdown.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="高考倒计时"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="False"
+        ShowInTaskbar="False"
+        Height="150"
+        Width="850"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- 中文倒计时 -->
+        <WrapPanel x:Name="ChinesePanel" Grid.Row="0"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Margin="0,0,0,5">
+            <TextBlock x:Name="ChinesePrefixTb" Text="距离高考还有 " Foreground="#FFFFFF" FontSize="40"/>
+            <TextBlock x:Name="DaysTb" Text="0" Foreground="#FF0000" FontWeight="Bold" FontSize="40">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#FFFF00" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="ChineseDaysTb" Text="天 " Foreground="#FFFFFF" FontSize="40"/>
+            <TextBlock x:Name="HoursTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="40">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#FFFF00" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="ChineseHoursTb" Text="小时 " Foreground="#FFFFFF" FontSize="40"/>
+            <TextBlock x:Name="MinutesTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="40">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#FFFF00" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="ChineseMinutesTb" Text="分 " Foreground="#FFFFFF" FontSize="40"/>
+            <TextBlock x:Name="SecondsTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="40">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+                <TextBlock.Effect>
+                    <DropShadowEffect Color="#FFFF00" BlurRadius="0" ShadowDepth="0" Opacity="0"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="ChineseSecondsTb" Text="秒" Foreground="#FFFFFF" FontSize="40"/>
+        </WrapPanel>
+
+        <!-- 英文倒计时 -->
+        <WrapPanel x:Name="EnglishPanel" Grid.Row="1"
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Margin="0,0,0,10">
+            <TextBlock x:Name="EnglishPrefixTb" Text="There are " Foreground="#D3D3D3" FontSize="16"/>
+            <TextBlock x:Name="DaysEnTb" Text="0" Foreground="#FF0000" FontWeight="Bold" FontSize="16">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock x:Name="EnglishDaysTb" Text=", days " Foreground="#D3D3D3" FontSize="16"/>
+            <TextBlock x:Name="HoursEnTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="16">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock x:Name="EnglishHoursTb" Text=", hours " Foreground="#D3D3D3" FontSize="16"/>
+            <TextBlock x:Name="MinutesEnTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="16">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock x:Name="EnglishMinutesTb" Text=", minutes, and " Foreground="#D3D3D3" FontSize="16"/>
+            <TextBlock x:Name="SecondsEnTb" Text="00" Foreground="#FF0000" FontWeight="Bold" FontSize="16">
+                <TextBlock.RenderTransform>
+                    <ScaleTransform/>
+                </TextBlock.RenderTransform>
+            </TextBlock>
+            <TextBlock x:Name="EnglishSecondsTb" Text=" seconds until the college entrance examination." Foreground="#D3D3D3" FontSize="16"/>
+        </WrapPanel>
+
+        <!-- 进度条（带发光效果） -->
+        <ProgressBar Grid.Row="2" Name="ProgressBar"
+                     Height="10"
+                     Margin="0,0,0,8"
+                     Background="#33000000"
+                     Foreground="#FFFFFF">
+            <ProgressBar.Effect>
+                <DropShadowEffect x:Name="ProgressBarGlow" Color="#FFFFFF" BlurRadius="8" ShadowDepth="0" Opacity="0.6"/>
+            </ProgressBar.Effect>
+        </ProgressBar>
+
+        <!-- 中文进度百分比 -->
+        <TextBlock Grid.Row="3" Name="ProgressText"
+                   FontSize="15"
+                   Foreground="#FFFFFF"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,3"/>
+
+        <!-- 英文进度百分比 -->
+        <TextBlock Grid.Row="4" Name="ProgressTextEn"
+                   FontSize="13"
+                   Foreground="#D3D3D3"
+                   HorizontalAlignment="Center"/>
+    </Grid>
+</Window>
