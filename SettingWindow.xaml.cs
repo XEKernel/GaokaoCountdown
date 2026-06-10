@@ -195,6 +195,7 @@ namespace GaokaoCountdown
             CustomYBox.Text = _mainWindow.CustomPositionY.ToString("F0");
             OffsetYBox.Text = _mainWindow.PositionOffsetY.ToString("F0");
             AlwaysOnTopCheck.IsChecked = _mainWindow.AlwaysOnTop;
+            AutoStartCheck.IsChecked   = MainWindow.GetAutoStartFromRegistry();
 
             // ── 显示 ──────────────────────────────────────────
             ShowEnglishCheck.IsChecked      = _mainWindow.ShowEnglishLine;
@@ -282,6 +283,8 @@ namespace GaokaoCountdown
             if (double.TryParse(OffsetYBox.Text, out double oy)) _mainWindow.PositionOffsetY = oy;
 
             _mainWindow.AlwaysOnTop = AlwaysOnTopCheck.IsChecked == true;
+            // AutoStart 在 CheckBox 事件中实时写注册表，此处同步 settings 字段即可
+            _mainWindow.AutoStart   = AutoStartCheck.IsChecked == true;
 
             // ── 显示 ──────────────────────────────────────────
             _mainWindow.ShowEnglishLine       = ShowEnglishCheck.IsChecked == true;
@@ -392,6 +395,7 @@ namespace GaokaoCountdown
             _mainWindow.CustomPositionY     = defaults.CustomPositionY;
             _mainWindow.PositionOffsetY     = defaults.PositionOffsetY;
             _mainWindow.AlwaysOnTop         = defaults.AlwaysOnTop;
+            _mainWindow.AutoStart           = defaults.AutoStart;  // 默认 false → 删除注册表项
             _mainWindow.GaokaoDateStr       = defaults.GaokaoDateStr;
             _mainWindow.StartDateStr        = defaults.StartDateStr;
             _mainWindow.ProgressDecimalDigits = defaults.ProgressDecimalDigits;
@@ -417,6 +421,13 @@ namespace GaokaoCountdown
         private void EnableSettingsAnimationsCheck_Changed(object sender, RoutedEventArgs e)
         {
             _enableSettingsAnimations = EnableSettingsAnimationsCheck.IsChecked == true;
+        }
+
+        private void AutoStartCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            bool enable = AutoStartCheck.IsChecked == true;
+            MainWindow.ApplyAutoStart(enable);
+            _mainWindow.AutoStart = enable;
         }
 
         // ══════════════════════════════════════════════════════

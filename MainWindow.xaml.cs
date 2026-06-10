@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Threading;
+using Microsoft.Win32;
 using Application = System.Windows.Application;
 using Hardcodet.Wpf.TaskbarNotification;
 
@@ -81,6 +82,53 @@ namespace GaokaoCountdown
         public string StartDateStr     { get => settings.StartDateStr;     set => settings.StartDateStr     = value; }
         public int    ProgressDecimalDigits { get => settings.ProgressDecimalDigits; set => settings.ProgressDecimalDigits = value; }
         public bool   EnableAnimations { get => settings.EnableAnimations; set => settings.EnableAnimations = value; }
+        public bool   AutoStart
+        {
+            get => settings.AutoStart;
+            set
+            {
+                settings.AutoStart = value;
+                ApplyAutoStart(value);
+            }
+        }
+
+        // ── 注册表自启动键名 ─────────────────────────────────
+        private const string AutoStartKeyName = "GaokaoCountdown";
+
+        /// <summary>读取当前注册表实际状态（与 settings 可能不同步时以此为准）</summary>
+        public static bool GetAutoStartFromRegistry()
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false);
+                return key?.GetValue(AutoStartKeyName) != null;
+            }
+            catch { return false; }
+        }
+
+        /// <summary>将自启动状态写入注册表</summary>
+        public static void ApplyAutoStart(bool enable)
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+                if (key == null) return;
+
+                if (enable)
+                {
+                    // 使用当前程序路径，带引号防止路径含空格
+                    string exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+                    key.SetValue(AutoStartKeyName, $"\"{exePath}\"");
+                }
+                else
+                {
+                    key.DeleteValue(AutoStartKeyName, throwOnMissingValue: false);
+                }
+            }
+            catch { /* 注册表写入失败静默处理 */ }
+        }
 
         // ── 进度条动画用：记录目标值 ────────────────────────
 
@@ -91,6 +139,9 @@ namespace GaokaoCountdown
             settings = AppSettings.Load();
             CountdownFontFamily = new FontFamily(settings.FontFamily);
             RefreshDateFields();
+
+            // 启动时以注册表实际状态同步设置（防止手动删除注册表后不一致）
+            settings.AutoStart = GetAutoStartFromRegistry();
 
             InitializeComponent();
             SetupTrayIcon();

@@ -500,6 +500,22 @@
                                 </StackPanel>
                             </Border>
 
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="&#x1F680;  系统" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <CheckBox Name="AutoStartCheck"
+                                              Content="开机自动启动"
+                                              Checked="AutoStartCheck_Changed"
+                                              Unchecked="AutoStartCheck_Changed"/>
+                                    <TextBlock FontSize="11" Foreground="#66CCCCDD"
+                                               Margin="20,0,0,0" TextWrapping="Wrap">
+                                        <Run Text="写入当前用户注册表 Run 键，无需管理员权限。"/>
+                                        <LineBreak/>
+                                        <Run Text="若程序路径发生变化（如移动文件夹），请重新勾选一次。"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>

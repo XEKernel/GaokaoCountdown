@@ -90,6 +90,10 @@ namespace GaokaoCountdown
         // 是否启用主窗口数字脉冲 & 进度条平滑动画
         public bool EnableAnimations { get; set; } = true;
 
+        // ── 系统 ─────────────────────────────────────────────
+        // 是否开机自启动（写注册表 HKCU\Run）
+        public bool AutoStart { get; set; } = false;
+
         // ── 持久化 ────────────────────────────────────────────
         private static readonly string SettingsPath = "settings.json";
 
