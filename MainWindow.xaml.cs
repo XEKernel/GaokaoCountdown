@@ -12,7 +12,6 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using Application = System.Windows.Application;
 using Hardcodet.Wpf.TaskbarNotification;
-
 namespace GaokaoCountdown
 {
     public partial class MainWindow : Window
@@ -30,6 +29,29 @@ namespace GaokaoCountdown
         private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
             int X, int Y, int cx, int cy, uint uFlags);
 
+        [DllImport("user32.dll")]
+        private static extern IntPtr GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct WINDOWPLACEMENT
+        {
+            public int length;
+            public int flags;
+            public int showCmd;
+            public int ptMinPositionX;
+            public int ptMinPositionY;
+            public int ptMaxPositionX;
+            public int ptMaxPositionY;
+            public int rcNormalLeft;
+            public int rcNormalTop;
+            public int rcNormalRight;
+            public int rcNormalBottom;
+        }
+        private const int SW_SHOWMAXIMIZED = 3;
+
         private static readonly IntPtr HWND_BOTTOM    = new IntPtr(1);
         private static readonly IntPtr HWND_TOPMOST  = new IntPtr(-1);
         private const uint SWP_NOSIZE    = 0x0001;
@@ -43,6 +65,10 @@ namespace GaokaoCountdown
 
         // ── 上次 tick 的值（用于判断是否需要脉冲动画） ──
         private int _lastDays, _lastHours, _lastMinutes, _lastSeconds;
+
+        // ── 最大化检测：记录上次隐藏状态，避免重复操作 ──
+        private bool _hiddenByMaximize = false;
+        private DispatcherTimer? _maximizeCheckTimer;
 
         // ── 设置代理属性 ─────────────────────────────────────
         public string ChinesePrefix      { get => settings.ChinesePrefix;      set => settings.ChinesePrefix      = value; }
@@ -91,6 +117,7 @@ namespace GaokaoCountdown
                 ApplyAutoStart(value);
             }
         }
+        public bool   HideWhenMaximized { get => settings.HideWhenMaximized; set => settings.HideWhenMaximized = value; }
 
         // ── 注册表自启动键名 ─────────────────────────────────
         private const string AutoStartKeyName = "GaokaoCountdown";
@@ -231,6 +258,38 @@ namespace GaokaoCountdown
             timer.Interval = TimeSpan.FromSeconds(1);
             timer.Tick += (s, e) => UpdateCountdown();
             timer.Start();
+
+            // 最大化检测定时器（每 500ms 检查一次前台窗口状态）
+            _maximizeCheckTimer = new DispatcherTimer();
+            _maximizeCheckTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _maximizeCheckTimer.Tick += MaximizeCheckTimer_Tick;
+            _maximizeCheckTimer.Start();
+        }
+
+        private void MaximizeCheckTimer_Tick(object? sender, EventArgs e)
+        {
+            if (!HideWhenMaximized) return;
+
+            IntPtr foreground = GetForegroundWindow();
+            // 排除本程序自身的窗口
+            var myHwnd = new WindowInteropHelper(this).Handle;
+            if (foreground == myHwnd || foreground == IntPtr.Zero) return;
+
+            var placement = new WINDOWPLACEMENT { length = Marshal.SizeOf<WINDOWPLACEMENT>() };
+            GetWindowPlacement(foreground, ref placement);
+            bool isForegroundMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+
+            if (isForegroundMaximized && Visibility == Visibility.Visible)
+            {
+                _hiddenByMaximize = true;
+                Hide();
+            }
+            else if (!isForegroundMaximized && _hiddenByMaximize)
+            {
+                _hiddenByMaximize = false;
+                Show();
+                ApplyWindowLayer();
+            }
         }
 
         // ══════════════════════════════════════════════════════

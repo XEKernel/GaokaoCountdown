@@ -215,10 +215,10 @@
 
         <!-- ═══════ TabItem — 圆角胶囊（固定高度防位移） ═══════ -->
         <Style TargetType="TabItem">
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="MinHeight" Value="36"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="MinHeight" Value="34"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
@@ -227,7 +227,7 @@
                                 CornerRadius="8,8,0,0"
                                 Padding="{TemplateBinding Padding}"
                                 MinHeight="{TemplateBinding MinHeight}"
-                                Margin="0,0,3,0"
+                                Margin="0,0,2,0"
                                 SnapsToDevicePixels="True"
                                 UseLayoutRounding="True">
                             <ContentPresenter
@@ -508,10 +508,20 @@
                                               Checked="AutoStartCheck_Changed"
                                               Unchecked="AutoStartCheck_Changed"/>
                                     <TextBlock FontSize="11" Foreground="#66CCCCDD"
-                                               Margin="20,0,0,0" TextWrapping="Wrap">
+                                               Margin="20,0,0,8" TextWrapping="Wrap">
                                         <Run Text="写入当前用户注册表 Run 键，无需管理员权限。"/>
                                         <LineBreak/>
                                         <Run Text="若程序路径发生变化（如移动文件夹），请重新勾选一次。"/>
+                                    </TextBlock>
+                                    <CheckBox Name="HideWhenMaximizedCheck"
+                                              Content="其他应用最大化时自动隐藏"
+                                              Checked="HideWhenMaximizedCheck_Changed"
+                                              Unchecked="HideWhenMaximizedCheck_Changed"/>
+                                    <TextBlock FontSize="11" Foreground="#66CCCCDD"
+                                               Margin="20,0,0,0" TextWrapping="Wrap">
+                                        <Run Text="前台窗口最大化时自动隐藏倒计时，恢复时重新显示。"/>
+                                        <LineBreak/>
+                                        <Run Text="不影响托盘右键显示/隐藏功能。"/>
                                     </TextBlock>
                                 </StackPanel>
                             </Border>

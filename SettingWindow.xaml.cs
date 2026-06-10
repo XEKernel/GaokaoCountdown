@@ -196,6 +196,7 @@ namespace GaokaoCountdown
             OffsetYBox.Text = _mainWindow.PositionOffsetY.ToString("F0");
             AlwaysOnTopCheck.IsChecked = _mainWindow.AlwaysOnTop;
             AutoStartCheck.IsChecked   = MainWindow.GetAutoStartFromRegistry();
+            HideWhenMaximizedCheck.IsChecked = _mainWindow.HideWhenMaximized;
 
             // ── 显示 ──────────────────────────────────────────
             ShowEnglishCheck.IsChecked      = _mainWindow.ShowEnglishLine;
@@ -285,6 +286,8 @@ namespace GaokaoCountdown
             _mainWindow.AlwaysOnTop = AlwaysOnTopCheck.IsChecked == true;
             // AutoStart 在 CheckBox 事件中实时写注册表，此处同步 settings 字段即可
             _mainWindow.AutoStart   = AutoStartCheck.IsChecked == true;
+            // HideWhenMaximized 在 CheckBox 事件中实时生效，此处同步 settings 字段
+            _mainWindow.HideWhenMaximized = HideWhenMaximizedCheck.IsChecked == true;
 
             // ── 显示 ──────────────────────────────────────────
             _mainWindow.ShowEnglishLine       = ShowEnglishCheck.IsChecked == true;
@@ -396,6 +399,7 @@ namespace GaokaoCountdown
             _mainWindow.PositionOffsetY     = defaults.PositionOffsetY;
             _mainWindow.AlwaysOnTop         = defaults.AlwaysOnTop;
             _mainWindow.AutoStart           = defaults.AutoStart;  // 默认 false → 删除注册表项
+            _mainWindow.HideWhenMaximized   = defaults.HideWhenMaximized;
             _mainWindow.GaokaoDateStr       = defaults.GaokaoDateStr;
             _mainWindow.StartDateStr        = defaults.StartDateStr;
             _mainWindow.ProgressDecimalDigits = defaults.ProgressDecimalDigits;
@@ -428,6 +432,11 @@ namespace GaokaoCountdown
             bool enable = AutoStartCheck.IsChecked == true;
             MainWindow.ApplyAutoStart(enable);
             _mainWindow.AutoStart = enable;
+        }
+
+        private void HideWhenMaximizedCheck_Changed(object sender, RoutedEventArgs e)
+        {
+            _mainWindow.HideWhenMaximized = HideWhenMaximizedCheck.IsChecked == true;
         }
 
         // ══════════════════════════════════════════════════════

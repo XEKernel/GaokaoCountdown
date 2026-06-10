@@ -93,6 +93,8 @@ namespace GaokaoCountdown
         // ── 系统 ─────────────────────────────────────────────
         // 是否开机自启动（写注册表 HKCU\Run）
         public bool AutoStart { get; set; } = false;
+        // 其他窗口最大化时自动隐藏倒计时
+        public bool HideWhenMaximized { get; set; } = false;
 
         // ── 持久化 ────────────────────────────────────────────
         private static readonly string SettingsPath = "settings.json";
