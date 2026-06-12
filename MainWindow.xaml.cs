@@ -164,7 +164,7 @@ namespace GaokaoCountdown
         private bool _introPlayed = false;  // 只播放一次
         private DispatcherTimer? _introTimer;
         private DateTime _introStart;
-        private const double IntroDurationMs = 1500.0;
+        private const double IntroDurationMs = 1250.0;
 
         // 入场动画时每个数字的目标值
         private int _introDays, _introHours, _introMinutes, _introSeconds;
@@ -638,7 +638,7 @@ namespace GaokaoCountdown
 
         // ══════════════════════════════════════════════════════
         //  入场动画：数字 0→实际值滚动 + 进度条 0→当前值
-        //  持续 1500ms，线性匀速动画
+        //  持续 1250ms，QuarticEaseOut 缓动（先快后慢）
         // ══════════════════════════════════════════════════════
         private void PlayIntroAnimation()
         {
@@ -656,10 +656,13 @@ namespace GaokaoCountdown
             double daysPassed = (now - startDate).TotalDays;
             _introProgress = Math.Min(100, Math.Max(0, daysPassed / totalDays * 100.0));
 
-            // ── 进度条动画：0 → 当前值，1.5s 线性 ──────────
+            // ── 进度条动画：0 → 当前值，1.25s EaseOut ──────────
             ProgressBar.Value = 0;
             var pbAnim = new DoubleAnimation(0, _introProgress,
-                new Duration(TimeSpan.FromMilliseconds(IntroDurationMs)));
+                new Duration(TimeSpan.FromMilliseconds(IntroDurationMs)))
+            {
+                EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut }
+            };
             ProgressBar.BeginAnimation(System.Windows.Controls.ProgressBar.ValueProperty, pbAnim);
 
             // ── 数字滚动：用 DispatcherTimer 逐帧更新文本 ──────
@@ -677,8 +680,8 @@ namespace GaokaoCountdown
             double elapsed = (DateTime.Now - _introStart).TotalMilliseconds;
             double t = Math.Min(1.0, elapsed / IntroDurationMs);
 
-            // 线性匀速
-            double eased = t;
+            // QuarticEaseOut: 1 - (1-t)^4，先快后慢
+            double eased = 1.0 - Math.Pow(1.0 - t, 4);
 
             int days    = (int)Math.Round(eased * _introDays);
             int hours   = (int)Math.Round(eased * _introHours);
