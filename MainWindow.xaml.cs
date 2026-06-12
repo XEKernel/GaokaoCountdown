@@ -157,7 +157,15 @@ namespace GaokaoCountdown
             catch { /* 注册表写入失败静默处理 */ }
         }
 
-        // ── 进度条动画用：记录目标值 ────────────────────────
+        // ── 入场动画 ─────────────────────────────────────────
+        private bool _introPlayed = false;  // 只播放一次
+        private DispatcherTimer? _introTimer;
+        private DateTime _introStart;
+        private const double IntroDurationMs = 1500.0;
+
+        // 入场动画时每个数字的目标值
+        private int _introDays, _introHours, _introMinutes, _introSeconds;
+        private double _introProgress;  // 进度条目标值(0~100)
 
 
         // ── 构造函数 ───────────────────────────────────────────
@@ -305,20 +313,26 @@ namespace GaokaoCountdown
             int minutes = timeLeft.TotalSeconds > 0 ? timeLeft.Minutes   : 0;
             int seconds = timeLeft.TotalSeconds > 0 ? timeLeft.Seconds   : 0;
 
-            // ── 更新数字文本（中文）─────────────────────────────
-            DaysTb.Text    = days.ToString();
-            HoursTb.Text   = hours.ToString("00");
-            MinutesTb.Text = minutes.ToString("00");
-            SecondsTb.Text = seconds.ToString("00");
+            // ── 入场动画进行中：跳过文本更新，等动画结束 ────
+            bool introRunning = _introTimer != null;
 
-            // ── 更新数字文本（英文）─────────────────────────────
-            DaysEnTb.Text    = days.ToString();
-            HoursEnTb.Text   = hours.ToString("00");
-            MinutesEnTb.Text = minutes.ToString("00");
-            SecondsEnTb.Text = seconds.ToString("00");
+            if (!introRunning)
+            {
+                // ── 更新数字文本（中文）─────────────────────────────
+                DaysTb.Text    = days.ToString();
+                HoursTb.Text   = hours.ToString("00");
+                MinutesTb.Text = minutes.ToString("00");
+                SecondsTb.Text = seconds.ToString("00");
 
-            // ── 脉冲动画：仅当值变化时触发 ─────────────────────
-            if (EnableAnimations)
+                // ── 更新数字文本（英文）─────────────────────────────
+                DaysEnTb.Text    = days.ToString();
+                HoursEnTb.Text   = hours.ToString("00");
+                MinutesEnTb.Text = minutes.ToString("00");
+                SecondsEnTb.Text = seconds.ToString("00");
+            }
+
+            // ── 脉冲动画：仅当值变化时触发（入场动画期间跳过）──
+            if (EnableAnimations && !introRunning)
             {
                 if (days != _lastDays && ShowDays)       PulseNumber(DaysTb,    true);
                 if (hours != _lastHours && ShowHours)    PulseNumber(HoursTb,   true);
@@ -343,7 +357,9 @@ namespace GaokaoCountdown
             double totalDays   = (gaokaoDate - startDate).TotalDays;
             double daysPassed  = (now - startDate).TotalDays;
             double progress    = Math.Min(1, Math.Max(0, daysPassed / totalDays));
-            ProgressBar.Value  = progress * 100;
+            // 入场动画期间不覆盖进度条（进度条正在动画中）
+            if (!introRunning)
+                ProgressBar.Value = progress * 100;
 
             string fmt = "F" + ProgressDecimalDigits;
             double pct = progress * 100.0;
@@ -603,7 +619,88 @@ namespace GaokaoCountdown
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyWindowLayer();
-            // 初始进度条已由 UpdateCountdown 设置
+            if (EnableAnimations && !_introPlayed)
+                PlayIntroAnimation();
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  入场动画：数字 0→实际值滚动 + 进度条 0→当前值
+        //  持续 1500ms，QuarticEaseOut 缓动（先快后慢）
+        // ══════════════════════════════════════════════════════
+        private void PlayIntroAnimation()
+        {
+            _introPlayed = true;
+
+            // 记录当前真实目标值
+            DateTime now = DateTime.Now;
+            TimeSpan timeLeft = gaokaoDate - now;
+            _introDays    = timeLeft.TotalSeconds > 0 ? timeLeft.Days    : 0;
+            _introHours   = timeLeft.TotalSeconds > 0 ? timeLeft.Hours   : 0;
+            _introMinutes = timeLeft.TotalSeconds > 0 ? timeLeft.Minutes : 0;
+            _introSeconds = timeLeft.TotalSeconds > 0 ? timeLeft.Seconds : 0;
+
+            double totalDays  = (gaokaoDate - startDate).TotalDays;
+            double daysPassed = (now - startDate).TotalDays;
+            _introProgress = Math.Min(100, Math.Max(0, daysPassed / totalDays * 100.0));
+
+            // ── 进度条动画：0 → 当前值，1.5s EaseOut ──────────
+            ProgressBar.Value = 0;
+            var pbAnim = new DoubleAnimation(0, _introProgress,
+                new Duration(TimeSpan.FromMilliseconds(IntroDurationMs)))
+            {
+                EasingFunction = new QuarticEase { EasingMode = EasingMode.EaseOut }
+            };
+            ProgressBar.BeginAnimation(System.Windows.Controls.ProgressBar.ValueProperty, pbAnim);
+
+            // ── 数字滚动：用 DispatcherTimer 逐帧更新文本 ──────
+            _introStart = DateTime.Now;
+            _introTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(16)  // ~60fps
+            };
+            _introTimer.Tick += IntroTimer_Tick;
+            _introTimer.Start();
+        }
+
+        private void IntroTimer_Tick(object? sender, EventArgs e)
+        {
+            double elapsed = (DateTime.Now - _introStart).TotalMilliseconds;
+            double t = Math.Min(1.0, elapsed / IntroDurationMs);
+
+            // QuarticEaseOut: 1 - (1-t)^4
+            double eased = 1.0 - Math.Pow(1.0 - t, 4);
+
+            int days    = (int)Math.Round(eased * _introDays);
+            int hours   = (int)Math.Round(eased * _introHours);
+            int minutes = (int)Math.Round(eased * _introMinutes);
+            int seconds = (int)Math.Round(eased * _introSeconds);
+
+            DaysTb.Text    = days.ToString();
+            HoursTb.Text   = hours.ToString("00");
+            MinutesTb.Text = minutes.ToString("00");
+            SecondsTb.Text = seconds.ToString("00");
+
+            DaysEnTb.Text    = days.ToString();
+            HoursEnTb.Text   = hours.ToString("00");
+            MinutesEnTb.Text = minutes.ToString("00");
+            SecondsEnTb.Text = seconds.ToString("00");
+
+            if (t >= 1.0)
+            {
+                // 动画结束，确保最终值精确
+                DaysTb.Text    = _introDays.ToString();
+                HoursTb.Text   = _introHours.ToString("00");
+                MinutesTb.Text = _introMinutes.ToString("00");
+                SecondsTb.Text = _introSeconds.ToString("00");
+
+                DaysEnTb.Text    = _introDays.ToString();
+                HoursEnTb.Text   = _introHours.ToString("00");
+                MinutesEnTb.Text = _introMinutes.ToString("00");
+                SecondsEnTb.Text = _introSeconds.ToString("00");
+
+                _introTimer!.Stop();
+                _introTimer = null;
+            }
         }
 
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
