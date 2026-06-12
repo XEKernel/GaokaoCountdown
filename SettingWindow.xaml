@@ -191,28 +191,6 @@
             </Setter>
         </Style>
 
-        <!-- ═══════ 滑块 ═══════ -->
-        <Style TargetType="Slider">
-            <Setter Property="Foreground" Value="#886688CC"/>
-            <Setter Property="Margin" Value="0,3,0,2"/>
-        </Style>
-
-        <!-- ═══════ CheckBox ═══════ -->
-        <Style TargetType="CheckBox">
-            <Setter Property="Foreground" Value="#CCE0E0F0"/>
-            <Setter Property="Margin" Value="0,5,0,7"/>
-            <Setter Property="FontSize" Value="13"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
-        <!-- ═══════ RadioButton ═══════ -->
-        <Style TargetType="RadioButton">
-            <Setter Property="Foreground" Value="#CCE0E0F0"/>
-            <Setter Property="Margin" Value="0,3,12,3"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
-
         <!-- ═══════ TabItem — 圆角胶囊（固定高度防位移） ═══════ -->
         <Style TargetType="TabItem">
             <Setter Property="FontSize" Value="12"/>

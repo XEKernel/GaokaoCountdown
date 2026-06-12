@@ -3,7 +3,7 @@
 
     <!-- ══════════════════════════════════════════════════════
          自定义控件样式（全局）
-         CheckBox · Slider · ScrollBar · TabItem
+         CheckBox · RadioButton · Slider · ScrollBar · TabItem
          ══════════════════════════════════════════════════════ -->
 
     <!-- ──────────────────────────────────────────────
@@ -94,6 +94,81 @@
 
 
     <!-- ──────────────────────────────────────────────
+         RadioButton — 暗色主题自定义单选圆圈
+         ────────────────────────────────────────────── -->
+    <Style TargetType="RadioButton">
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Margin" Value="0,3,12,3"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="#CCE0E0F0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RadioButton">
+                    <Grid Background="Transparent">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 外圈 -->
+                        <Border x:Name="RadioOuter"
+                                Grid.Column="0"
+                                Width="18" Height="18"
+                                CornerRadius="9"
+                                Background="#22FFFFFF"
+                                BorderBrush="#44FFFFFF"
+                                BorderThickness="1.5"
+                                Margin="0,0,8,0"
+                                SnapsToDevicePixels="True">
+                            <!-- 内点 -->
+                            <Ellipse x:Name="RadioDot"
+                                     Width="8" Height="8"
+                                     Fill="#FF6688CC"
+                                     Opacity="0"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center"/>
+                        </Border>
+
+                        <ContentPresenter Grid.Column="1"
+                                          Content="{TemplateBinding Content}"
+                                          VerticalAlignment="Center"
+                                          Margin="2,0,0,0"
+                                          RecognizesAccessKey="True"/>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="RadioDot" Property="Opacity" Value="1"/>
+                            <Setter TargetName="RadioOuter" Property="BorderBrush" Value="#FF6688CC"/>
+                            <Setter TargetName="RadioOuter" Property="Background" Value="#186688CC"/>
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsChecked" Value="False"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="RadioOuter" Property="Background" Value="#33FFFFFF"/>
+                            <Setter TargetName="RadioOuter" Property="BorderBrush" Value="#66FFFFFF"/>
+                        </MultiTrigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsMouseOver" Value="True"/>
+                                <Condition Property="IsChecked" Value="True"/>
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="RadioOuter" Property="Background" Value="#226688CC"/>
+                        </MultiTrigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+    <!-- ──────────────────────────────────────────────
          Slider — 暗色圆形拇指 + 渐变轨道
          ────────────────────────────────────────────── -->
     <Style TargetType="Slider">
@@ -167,36 +242,34 @@
 
 
     <!-- ──────────────────────────────────────────────
-         ScrollBar — 细窄暗色滚动条
+         ScrollBar — 细窄暗色滚动条（拇指长度随内容自适应）
          ────────────────────────────────────────────── -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="6"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ScrollBar">
                     <Grid x:Name="Root">
                         <Border Background="{TemplateBinding Background}"
-                                CornerRadius="3"/>
+                                CornerRadius="4"/>
                         <Track x:Name="PART_Track"
-                               IsDirectionReversed="True"
-                               ViewportSize="0">
+                               IsDirectionReversed="True">
                             <Track.Thumb>
                                 <Thumb x:Name="Thumb"
                                        Cursor="Hand"
-                                       Opacity="0.4">
+                                       Opacity="0.3">
                                     <Thumb.Template>
                                         <ControlTemplate TargetType="Thumb">
                                             <Border x:Name="ThumbBorder"
                                                     Background="#88FFFFFF"
-                                                    CornerRadius="3"
-                                                    Margin="0,1"/>
+                                                    CornerRadius="4"
+                                                    Margin="1,2,1,2"/>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#AAFFFFFF"/>
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#CCFFFFFF"/>
                                                 </Trigger>
                                                 <Trigger Property="IsDragging" Value="True">
-                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#CCFFFFFF"/>
+                                                    <Setter TargetName="ThumbBorder" Property="Background" Value="#FFFFFFFF"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -217,7 +290,7 @@
                             </Track.DecreaseRepeatButton>
                         </Track>
 
-                        <!-- 上下箭头按钮（极小，几乎不可见但与默认行为一致） -->
+                        <!-- 上下箭头按钮（透明） -->
                         <RepeatButton x:Name="LineUp"
                                       Command="ScrollBar.LineUpCommand"
                                       Opacity="0"
@@ -229,9 +302,9 @@
                     </Grid>
 
                     <ControlTemplate.Triggers>
-                        <!-- 鼠标悬停时加粗到 8px -->
+                        <!-- 鼠标悬停时拇指更亮、更宽 -->
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Root" Property="Width" Value="8"/>
+                            <Setter TargetName="Thumb" Property="Opacity" Value="0.55"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
