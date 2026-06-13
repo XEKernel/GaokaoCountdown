@@ -28,14 +28,20 @@ namespace GaokaoCountdown
 
         // ── Win32 API ─────────────────────────────────────────
         [DllImport("user32.dll")]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
-            int X, int Y, int cx, int cy, uint uFlags);
-
-        [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         private static extern int GetWindowPlacement(IntPtr hWnd, ref WINDOWPLACEMENT lpwndpl);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport("user32.dll")]
+        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
+            int X, int Y, int cx, int cy, uint uFlags);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct WINDOWPLACEMENT
@@ -54,11 +60,13 @@ namespace GaokaoCountdown
         }
         private const int SW_SHOWMAXIMIZED = 3;
 
-        private static readonly IntPtr HWND_BOTTOM    = new IntPtr(1);
-        private static readonly IntPtr HWND_TOPMOST  = new IntPtr(-1);
-        private const uint SWP_NOSIZE    = 0x0001;
-        private const uint SWP_NOMOVE    = 0x0002;
-        private const uint SWP_NOACTIVATE = 0x0010;
+        // 窗口扩展样式（点击穿透）
+        private const int GWL_EXSTYLE      = -20;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+        private const uint SWP_FRAMECHANGED = 0x0020;
+        private const uint SWP_NOMOVE       = 0x0002;
+        private const uint SWP_NOSIZE       = 0x0001;
+        private const uint SWP_NOACTIVATE   = 0x0010;
 
         // 基准尺寸
         private const int BaseFontSize     = 40;
@@ -71,6 +79,8 @@ namespace GaokaoCountdown
         // ── 最大化检测：记录上次隐藏状态，避免重复操作 ──
         private bool _hiddenByMaximize = false;
         private DispatcherTimer? _maximizeCheckTimer;
+        private bool _isPositioning = false;   // 程序化定位中，抑制 LocationChanged 回写
+        private bool _clickThroughEnabled = false;  // 当前点击穿透状态
 
         // ── 设置窗口单例引用 ─────────────────────────────────
         private SettingWindow? _settingWindow;
@@ -114,7 +124,14 @@ namespace GaokaoCountdown
         public bool   ShowSeconds      { get => settings.ShowSeconds;      set => settings.ShowSeconds      = value; }
         public double OverallOpacity   { get => settings.OverallOpacity;   set => settings.OverallOpacity   = value; }
 
-        public int    PositionPreset   { get => settings.PositionPreset;   set => settings.PositionPreset   = value; }
+        public int    PositionPreset
+        {
+            get => settings.PositionPreset;
+            set {
+                settings.PositionPreset = value;
+                ApplyClickThrough();  // 预设模式 → 穿透；自定义 → 可交互
+            }
+        }
         public double CustomPositionX  { get => settings.CustomPositionX;  set => settings.CustomPositionX  = value; }
         public double CustomPositionY  { get => settings.CustomPositionY;  set => settings.CustomPositionY  = value; }
         public double PositionOffsetY  { get => settings.PositionOffsetY;  set => settings.PositionOffsetY  = value; }
@@ -136,10 +153,9 @@ namespace GaokaoCountdown
         public string WeatherCity            { get => settings.WeatherCity;            set => settings.WeatherCity            = value; }
         public string WeatherAdcode          { get => settings.WeatherAdcode;          set => settings.WeatherAdcode          = value; }
         public int    WeatherWindowMode      { get => settings.WeatherWindowMode;      set => settings.WeatherWindowMode      = value; }
+        public int    WeatherWindowPreset  { get => settings.WeatherWindowPreset;  set => settings.WeatherWindowPreset  = value; }
         public double WeatherCustomX         { get => settings.WeatherCustomX;         set => settings.WeatherCustomX         = value; }
         public double WeatherCustomY         { get => settings.WeatherCustomY;         set => settings.WeatherCustomY         = value; }
-        public double WeatherWindowWidth     { get => settings.WeatherWindowWidth;     set => settings.WeatherWindowWidth     = value; }
-        public double WeatherWindowHeight    { get => settings.WeatherWindowHeight;    set => settings.WeatherWindowHeight    = value; }
         public int    WeatherRefreshInterval { get => settings.WeatherRefreshInterval; set => settings.WeatherRefreshInterval = value; }
         public double WeatherFontSize        { get => settings.WeatherFontSize;        set => settings.WeatherFontSize        = value; }
         public bool   WeatherAlwaysOnTop     { get => settings.WeatherAlwaysOnTop;     set => settings.WeatherAlwaysOnTop     = value; }
@@ -223,6 +239,9 @@ namespace GaokaoCountdown
             UpdateCountdown();
             PositionWindow();
             UpdateCountdownDisplay();
+
+            // 拖动窗口时实时同步坐标到 settings
+            LocationChanged += Window_LocationChanged;
         }
 
         public void RefreshDateFields()
@@ -331,17 +350,32 @@ namespace GaokaoCountdown
         // ── 窗口层级 ───────────────────────────────────────────
         public void ApplyWindowLayer()
         {
+            Topmost = AlwaysOnTop;
+        }
+
+        /// <summary>预设模式下启用点击穿透（WS_EX_TRANSPARENT），自定义模式下可正常交互</summary>
+        private void ApplyClickThrough()
+        {
+            bool shouldEnable = PositionPreset != 5;  // 非自定义模式 → 穿透
+            if (_clickThroughEnabled == shouldEnable) return;  // 状态未变，跳过
+
+            _clickThroughEnabled = shouldEnable;
+
+            if (!IsLoaded) return;  // 窗口句柄尚未创建
+
             var hwnd = new WindowInteropHelper(this).Handle;
-            if (AlwaysOnTop)
-            {
-                Topmost = true;
-                SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-            }
+            if (hwnd == IntPtr.Zero) return;
+
+            int exStyle = GetWindowLong(hwnd, GWL_EXSTYLE);
+            if (shouldEnable)
+                exStyle |= WS_EX_TRANSPARENT;
             else
-            {
-                Topmost = false;
-                SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
-            }
+                exStyle &= ~WS_EX_TRANSPARENT;
+
+            SetWindowLong(hwnd, GWL_EXSTYLE, exStyle);
+            // 刷新窗口框架使扩展样式生效
+            SetWindowPos(hwnd, IntPtr.Zero, 0, 0, 0, 0,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
         // ── 定时器 ─────────────────────────────────────────────
@@ -678,10 +712,13 @@ namespace GaokaoCountdown
             double sh = SystemParameters.PrimaryScreenHeight;
             double x, y;
 
+            _isPositioning = true;
+
             if (PositionPreset == 5 && CustomPositionX >= 0 && CustomPositionY >= 0)
             {
                 Left = CustomPositionX;
                 Top  = CustomPositionY;
+                _isPositioning = false;
                 return;
             }
 
@@ -697,6 +734,8 @@ namespace GaokaoCountdown
             }
             Left = x;
             Top  = y + PositionOffsetY;
+
+            _isPositioning = false;
         }
 
         // ══════════════════════════════════════════════════════
@@ -705,6 +744,8 @@ namespace GaokaoCountdown
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyWindowLayer();
+            ApplyClickThrough();  // 根据当前预设模式设置点击穿透
+            Activate();  // 确保启动时窗口可见（不被其他窗口遮挡）
             if (EnableAnimations)
                 PlayIntroAnimation();
             // 异步加载每日一言（fire-and-forget）
@@ -716,6 +757,25 @@ namespace GaokaoCountdown
             // 天气窗口
             if (ShowWeather)
                 ShowWeatherWindow();
+        }
+
+        /// <summary>自定义模式下拖动窗口；预设模式下点击穿透，不响应拖动</summary>
+        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // 预设模式下不可拖动（点击穿透生效，此事件不应触发；但以防万一再次判断）
+            if (PositionPreset != 5) return;
+
+            DragMove();
+        }
+
+        /// <summary>拖动窗口时实时同步坐标到 settings，设置页中可实时看到</summary>
+        private void Window_LocationChanged(object? sender, EventArgs e)
+        {
+            if (_isPositioning) return;
+            // 只在自定义模式（preset=5）时回写坐标
+            if (PositionPreset != 5) return;
+            CustomPositionX = Left;
+            CustomPositionY = Top;
         }
 
         // ══════════════════════════════════════════════════════
@@ -930,8 +990,11 @@ namespace GaokaoCountdown
             else
             {
                 _weatherWindow.ApplyMode();
-                _weatherWindow.PositionWindow();
-                _weatherWindow.ApplyWindowLayer();
+                // SizeToContent 异步重排，延迟定位
+                _weatherWindow.Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _weatherWindow.PositionWindow();
+                }), DispatcherPriority.Loaded);
                 _weatherWindow.StartRefreshTimer();
             }
         }

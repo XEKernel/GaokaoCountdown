@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 
 namespace GaokaoCountdown
@@ -33,11 +34,25 @@ namespace GaokaoCountdown
         private const uint SWP_NOMOVE     = 0x0002;
         private const uint SWP_NOACTIVATE = 0x0010;
 
+        private bool _isPositioning = false;   // 程序化定位中，抑制 LocationChanged 回写
+
         // ── 构造函数 ───────────────────────────────────────────
         public WeatherWindow(AppSettings settings)
         {
             _settings = settings;
             InitializeComponent();
+
+            // 拖动时实时更新坐标到 settings
+            LocationChanged += Window_LocationChanged;
+
+            // 窗口完成布局后再定位（SizeToContent 计算完成后）
+            Loaded += OnFirstLoaded;
+        }
+
+        private void OnFirstLoaded(object sender, RoutedEventArgs e)
+        {
+            Loaded -= OnFirstLoaded;
+            PositionWindow();
         }
 
         /// <summary>根据当前设置初始化窗口样式</summary>
@@ -47,28 +62,34 @@ namespace GaokaoCountdown
 
             if (mode == 1) // 窗口模式
             {
-                // 需要先关闭当前窗口再重建（WindowStyle 不可运行时切换）
-                // 此方法在窗口已创建后调用时，只更新内容/位置
-                WindowFrame.Visibility = Visibility.Visible;
-                TextFrame.Visibility = Visibility.Collapsed;
-                Width  = _settings.WeatherWindowWidth > 0 ? _settings.WeatherWindowWidth : 360;
-                Height = _settings.WeatherWindowHeight > 0 ? _settings.WeatherWindowHeight : 200;
-                // 给内容加 padding 适配窗口模式
-                ContentGrid.Margin = new Thickness(14, 12, 14, 12);
+                MainBorder.Background = new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#E815152A"));
+                MainBorder.BorderBrush = new SolidColorBrush(
+                    (Color)ColorConverter.ConvertFromString("#30FFFFFF"));
+                MainBorder.BorderThickness = new Thickness(1);
+                MainBorder.CornerRadius = new CornerRadius(12);
+                MainBorder.Padding = new Thickness(14, 12, 14, 12);
+                MainBorder.Effect = new DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 20,
+                    ShadowDepth = 3,
+                    Opacity = 0.5
+                };
             }
             else // 文字模式
             {
-                WindowFrame.Visibility = Visibility.Collapsed;
-                TextFrame.Visibility = Visibility.Visible;
-                Width  = _settings.WeatherWindowWidth > 0 ? _settings.WeatherWindowWidth : 300;
-                Height = _settings.WeatherWindowHeight > 0 ? _settings.WeatherWindowHeight : 80;
-                ContentGrid.Margin = new Thickness(4, 2, 4, 2);
+                MainBorder.Background = Brushes.Transparent;
+                MainBorder.BorderThickness = new Thickness(0);
+                MainBorder.CornerRadius = new CornerRadius(0);
+                MainBorder.Padding = new Thickness(4, 2, 4, 2);
+                MainBorder.Effect = null;
             }
 
-            ApplyWindowLayer();
-            PositionWindow();
             ApplyFontSize();
             ApplyColors();
+            ApplyWindowLayer();
+            // SizeToContent 自动调整窗口大小，无需手动设 Width/Height
         }
 
         /// <summary>应用字体大小到所有文本</summary>
@@ -122,32 +143,74 @@ namespace GaokaoCountdown
             }
         }
 
-        /// <summary>定位窗口</summary>
+        /// <summary>定位窗口（支持预设位置 + 自定义坐标）</summary>
         public void PositionWindow()
         {
+            // SizeToContent 模式下，首次调用时宽高可能为 NaN，跳过
+            if (double.IsNaN(Width) || double.IsNaN(Height)) return;
+
             double sw = SystemParameters.PrimaryScreenWidth;
             double sh = SystemParameters.PrimaryScreenHeight;
 
-            double cx = _settings.WeatherCustomX;
-            double cy = _settings.WeatherCustomY;
+            _isPositioning = true;
 
-            if (cx >= 0 && cy >= 0)
+            int preset = _settings.WeatherWindowPreset;
+            if (preset == 0) // 自定义坐标
             {
-                Left = cx;
-                Top  = cy;
+                double cx = _settings.WeatherCustomX;
+                double cy = _settings.WeatherCustomY;
+
+                if (cx >= 0 && cy >= 0)
+                {
+                    Left = cx;
+                    Top  = cy;
+                }
+                else
+                {
+                    // 兜底：右上角
+                    Left = sw - ActualWidth - 20;
+                    Top  = 60;
+                }
             }
             else
             {
-                // 默认右上角
-                Left = sw - Width - 20;
-                Top  = 60;
+                // 预设位置
+                switch (preset)
+                {
+                    case 1: // 右上角
+                        Left = sw - ActualWidth - 20;
+                        Top  = 60;
+                        break;
+                    case 2: // 右下角
+                        Left = sw - ActualWidth - 20;
+                        Top  = sh - ActualHeight - 40;
+                        break;
+                    case 3: // 左上角
+                        Left = 20;
+                        Top  = 60;
+                        break;
+                    case 4: // 左下角
+                        Left = 20;
+                        Top  = sh - ActualHeight - 40;
+                        break;
+                    case 5: // 顶部居中
+                        Left = (sw - ActualWidth) / 2;
+                        Top  = 20;
+                        break;
+                    default: // fallback 右上角
+                        Left = sw - ActualWidth - 20;
+                        Top  = 60;
+                        break;
+                }
             }
 
             // 确保不超出屏幕
             if (Left < 0) Left = 0;
             if (Top < 0) Top = 0;
-            if (Left + Width > sw) Left = sw - Width;
-            if (Top + Height > sh) Top = sh - Height;
+            if (Left + ActualWidth > sw) Left = sw - ActualWidth;
+            if (Top + ActualHeight > sh) Top = sh - ActualHeight;
+
+            _isPositioning = false;
         }
 
         // ── 天气 API ────────────────────────────────────────
@@ -247,6 +310,11 @@ namespace GaokaoCountdown
         {
             if (e.ClickCount == 1)
             {
+                // 拖动时自动切换到自定义坐标模式
+                if (_settings.WeatherWindowPreset != 0)
+                {
+                    _settings.WeatherWindowPreset = 0;
+                }
                 DragMove();
             }
             else if (e.ClickCount == 2)
@@ -260,6 +328,16 @@ namespace GaokaoCountdown
         {
             _refreshTimer?.Stop();
             _refreshTimer = null;
+        }
+
+        /// <summary>拖动窗口时实时同步坐标到 settings，确保"确定"后不掉回原位</summary>
+        private void Window_LocationChanged(object? sender, EventArgs e)
+        {
+            if (_isPositioning) return;
+            // 只在自定义模式（preset=0）时回写坐标；其他模式不污染自定义值
+            if (_settings.WeatherWindowPreset != 0) return;
+            _settings.WeatherCustomX = Left;
+            _settings.WeatherCustomY = Top;
         }
     }
 }

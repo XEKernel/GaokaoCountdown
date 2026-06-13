@@ -393,12 +393,21 @@ namespace GaokaoCountdown
                 WeatherModeWindow.IsChecked = true;
             else
                 WeatherModeText.IsChecked   = true;
+
+            // 天气窗口位置预设
+            switch (_mainWindow.WeatherWindowPreset)
+            {
+                case 0: WeatherPosCustom.IsChecked      = true; break;
+                case 1: WeatherPosTopRight.IsChecked    = true; break;
+                case 2: WeatherPosBottomRight.IsChecked = true; break;
+                case 3: WeatherPosTopLeft.IsChecked     = true; break;
+                case 4: WeatherPosBottomLeft.IsChecked  = true; break;
+                case 5: WeatherPosTopCenter.IsChecked   = true; break;
+                default: WeatherPosTopRight.IsChecked   = true; break;
+            }
+
             WeatherXBox.Text                    = _mainWindow.WeatherCustomX.ToString("F0");
             WeatherYBox.Text                    = _mainWindow.WeatherCustomY.ToString("F0");
-            WeatherWidthSlider.Value            = _mainWindow.WeatherWindowWidth;
-            WeatherWidthText.Text               = $"{_mainWindow.WeatherWindowWidth:F0}px";
-            WeatherHeightSlider.Value           = _mainWindow.WeatherWindowHeight;
-            WeatherHeightText.Text              = $"{_mainWindow.WeatherWindowHeight:F0}px";
             WeatherFontSizeSlider.Value         = _mainWindow.WeatherFontSize;
             WeatherFontSizeText.Text            = _mainWindow.WeatherFontSize.ToString("F0");
             WeatherRefreshIntervalSlider.Value  = _mainWindow.WeatherRefreshInterval;
@@ -525,10 +534,16 @@ namespace GaokaoCountdown
             _mainWindow.WeatherAdcode        = WeatherAdcodeBox.Text.Trim();
             _mainWindow.WeatherWindowMode    = WeatherModeWindow.IsChecked == true ? 1 : 0;
 
+            _mainWindow.WeatherWindowPreset =
+                WeatherPosCustom.IsChecked == true      ? 0 :
+                WeatherPosTopRight.IsChecked == true    ? 1 :
+                WeatherPosBottomRight.IsChecked == true ? 2 :
+                WeatherPosTopLeft.IsChecked == true     ? 3 :
+                WeatherPosBottomLeft.IsChecked == true  ? 4 :
+                WeatherPosTopCenter.IsChecked == true   ? 5 : 1;
+
             if (double.TryParse(WeatherXBox.Text, out double wx))     _mainWindow.WeatherCustomX      = wx;
             if (double.TryParse(WeatherYBox.Text, out double wy))     _mainWindow.WeatherCustomY      = wy;
-            _mainWindow.WeatherWindowWidth  = WeatherWidthSlider.Value;
-            _mainWindow.WeatherWindowHeight = WeatherHeightSlider.Value;
             _mainWindow.WeatherFontSize     = WeatherFontSizeSlider.Value;
 
             _mainWindow.WeatherRefreshInterval = (int)WeatherRefreshIntervalSlider.Value;
@@ -690,10 +705,9 @@ namespace GaokaoCountdown
             _mainWindow.WeatherCity              = defaults.WeatherCity;
             _mainWindow.WeatherAdcode            = defaults.WeatherAdcode;
             _mainWindow.WeatherWindowMode        = defaults.WeatherWindowMode;
+            _mainWindow.WeatherWindowPreset      = defaults.WeatherWindowPreset;
             _mainWindow.WeatherCustomX           = defaults.WeatherCustomX;
             _mainWindow.WeatherCustomY           = defaults.WeatherCustomY;
-            _mainWindow.WeatherWindowWidth       = defaults.WeatherWindowWidth;
-            _mainWindow.WeatherWindowHeight      = defaults.WeatherWindowHeight;
             _mainWindow.WeatherFontSize          = defaults.WeatherFontSize;
             _mainWindow.WeatherRefreshInterval   = defaults.WeatherRefreshInterval;
             _mainWindow.WeatherAlwaysOnTop       = defaults.WeatherAlwaysOnTop;
@@ -1099,16 +1113,22 @@ namespace GaokaoCountdown
 
         private void WeatherMode_Changed(object sender, RoutedEventArgs e) { }
 
-        private void WeatherWidthSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void WeatherPosCustom_Checked(object sender, RoutedEventArgs e)
         {
-            if (WeatherWidthText != null)
-                WeatherWidthText.Text = $"{(int)WeatherWidthSlider.Value}px";
+            if (WeatherCustomPosPanel != null)
+            {
+                WeatherCustomPosPanel.IsEnabled = true;
+                WeatherCustomPosPanel.Opacity   = 1.0;
+            }
         }
 
-        private void WeatherHeightSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void WeatherPosCustom_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (WeatherHeightText != null)
-                WeatherHeightText.Text = $"{(int)WeatherHeightSlider.Value}px";
+            if (WeatherCustomPosPanel != null)
+            {
+                WeatherCustomPosPanel.IsEnabled = false;
+                WeatherCustomPosPanel.Opacity   = 0.5;
+            }
         }
 
         private void WeatherFontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)

@@ -104,10 +104,10 @@ namespace GaokaoCountdown
         public string WeatherCity            { get; set; } = "北京";
         public string WeatherAdcode          { get; set; } = "";
         public int    WeatherWindowMode      { get; set; } = 0;   // 0=文字模式, 1=窗口模式
+        // 0=自定义, 1=右上角, 2=右下角, 3=左上角, 4=左下角, 5=顶部居中
+        public int    WeatherWindowPreset    { get; set; } = 1;
         public double WeatherCustomX         { get; set; } = -1;
         public double WeatherCustomY         { get; set; } = -1;
-        public double WeatherWindowWidth     { get; set; } = 300;
-        public double WeatherWindowHeight    { get; set; } = 80;
         public int    WeatherRefreshInterval { get; set; } = 0;   // 分钟，0=不自动刷新
         public double WeatherFontSize        { get; set; } = 14;   // 文本字号
         public bool   WeatherAlwaysOnTop     { get; set; } = false;

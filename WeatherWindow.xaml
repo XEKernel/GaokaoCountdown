@@ -7,31 +7,16 @@
         Background="Transparent"
         Topmost="False"
         ShowInTaskbar="False"
-        Height="80"
-        Width="300"
+        SizeToContent="WidthAndHeight"
         MouseLeftButtonDown="Window_MouseLeftButtonDown"
         Closing="Window_Closing">
 
-    <Grid>
-        <!-- ═══ 窗口模式背景（仅窗口模式可见） ═══ -->
-        <Border x:Name="WindowFrame" Visibility="Collapsed"
-                Background="#E815152A"
-                BorderBrush="#30FFFFFF"
-                BorderThickness="1"
-                CornerRadius="12"
-                Padding="12">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="3" Opacity="0.5"/>
-            </Border.Effect>
-        </Border>
+    <!-- 单一容器：代码中根据模式切换背景/边框/圆角/阴影 -->
+    <Border x:Name="MainBorder" Background="Transparent"
+            BorderThickness="0" CornerRadius="0"
+            Padding="4,2,4,2">
 
-        <!-- ═══ 文字模式背景（全透明，仅文字可见） ═══ -->
-        <Border x:Name="TextFrame" Visibility="Visible"
-                Background="Transparent"
-                BorderThickness="0"/>
-
-        <!-- ═══ 主内容 ═══ -->
-        <Grid Margin="0" x:Name="ContentGrid">
+        <Grid x:Name="ContentGrid">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -69,5 +54,5 @@
                            VerticalAlignment="Center"/>
             </WrapPanel>
         </Grid>
-    </Grid>
+    </Border>
 </Window>
