@@ -1305,68 +1305,171 @@
 
                             <!-- 应用信息卡片 -->
                             <Border Style="{StaticResource CardPanel}">
-                                <StackPanel>
-                                    <TextBlock Text="高考倒计时" FontSize="20" FontWeight="Bold"
-                                               Foreground="#FFFFFFFF" Margin="0,0,0,4"/>
-                                    <TextBlock Text="Gaokao Countdown"
-                                               FontSize="13" Foreground="#88CCCCDD" Margin="0,0,0,12"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                    <TextBlock Text="&#x1F9D1;&#x200D;&#x1F4BB;  作者"
-                                               FontSize="13" Foreground="#AAE0E0F0" Margin="0,4,0,2"/>
-                                    <TextBlock Text="XEKernel"
-                                               FontSize="16" FontWeight="SemiBold"
-                                               Foreground="#FFFFFFFF" Margin="0,0,0,10"/>
+                                    <!-- 左侧：文字信息 -->
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                            <TextBlock Text="高考倒计时" FontSize="20" FontWeight="Bold"
+                                                       Foreground="#FFFFFFFF"/>
+                                            <TextBlock Text="  v1.1" FontSize="13"
+                                                       Foreground="#6688CCAA" VerticalAlignment="Bottom"
+                                                       Margin="4,0,0,3"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Gaokao Countdown"
+                                                   FontSize="13" Foreground="#88CCCCDD" Margin="0,0,0,12"/>
 
-                                    <TextBlock Text="&#x1F310;  GitHub 仓库"
-                                               FontSize="13" Foreground="#AAE0E0F0" Margin="0,4,0,2"/>
-                                    <TextBlock FontSize="13" Foreground="#FF6688CC"
-                                               Cursor="Hand" TextDecorations="Underline"
-                                               MouseLeftButtonDown="GitHubLink_MouseLeftButtonDown"
-                                               ToolTip="在浏览器中打开 GitHub 仓库">
-                                        <Run Text="SYSTEM-MEMZ-XEK / GaokaoCountdown"/>
-                                    </TextBlock>
-                                </StackPanel>
+                                        <Grid Margin="0,2,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="作者" FontSize="12" Foreground="#66CCCCDD"/>
+                                            <TextBlock Grid.Column="1" Text="XEKernel"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#FFFFFFFF"/>
+                                        </Grid>
+
+                                        <Grid Margin="0,2,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="版本" FontSize="12" Foreground="#66CCCCDD"/>
+                                            <TextBlock Grid.Column="1" Text="1.1"
+                                                       FontSize="13" Foreground="#AACCDDEE"/>
+                                        </Grid>
+
+                                        <Grid Margin="0,2,0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="70"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="许可证" FontSize="12" Foreground="#66CCCCDD"/>
+                                            <TextBlock Grid.Column="1" Text="MIT"
+                                                       FontSize="13" Foreground="#AACCDDEE"/>
+                                        </Grid>
+
+                                        <TextBlock Margin="0,8,0,0">
+                                            <Hyperlink FontSize="12" Foreground="#FF6688CC"
+                                                       TextDecorations="Underline"
+                                                       NavigateUri="https://github.com/SYSTEM-MEMZ-XEK/GaokaoCountdown"
+                                                       ToolTip="在浏览器中打开 GitHub 仓库"
+                                                       RequestNavigate="GitHubLink_RequestNavigate">
+                                                 SYSTEM-MEMZ-XEK / GaokaoCountdown
+                                            </Hyperlink>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <!-- 右侧：软件图标 -->
+                                    <Image Grid.Column="1" Source="icon.ico"
+                                           Width="96" Height="96"
+                                           VerticalAlignment="Center" Margin="16,0,0,0"/>
+                                </Grid>
                             </Border>
 
                             <!-- 技术栈卡片 -->
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
-                                    <TextBlock Text="技术栈" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
-                                    <TextBlock FontSize="12" Foreground="#CCE0E0F0" Margin="0,2,0,2">
-                                        <Run Text="框架：.NET 8  ·  WPF"/>
+                                    <TextBlock Text="&#x1F6E0;  技术栈" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="框架" FontSize="12" Foreground="#66CCCCDD"/>
+                                        <TextBlock Grid.Column="1" Text=".NET 8 · WPF"
+                                                   FontSize="13" Foreground="#CCE0E0F0"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="语言" FontSize="12" Foreground="#66CCCCDD"/>
+                                        <TextBlock Grid.Column="1" Text="C# 12 · XAML"
+                                                   FontSize="13" Foreground="#CCE0E0F0"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="平台" FontSize="12" Foreground="#66CCCCDD"/>
+                                        <TextBlock Grid.Column="1" Text="Windows x64"
+                                                   FontSize="13" Foreground="#CCE0E0F0"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="80"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="持久化" FontSize="12" Foreground="#66CCCCDD"/>
+                                        <TextBlock Grid.Column="1" Text="JSON (System.Text.Json)"
+                                                   FontSize="13" Foreground="#CCE0E0F0"/>
+                                    </Grid>
+                                    <Separator Background="#15FFFFFF" Margin="0,6"/>
+                                    <TextBlock Text="NuGet 依赖" FontSize="11" Foreground="#55CCCCDD" Margin="0,4,0,2"/>
+                                    <TextBlock FontSize="12" Foreground="#AACCDDEE" Margin="0,1,0,1">
+                                        Hardcodet.NotifyIcon.Wpf
                                     </TextBlock>
-                                    <TextBlock FontSize="12" Foreground="#CCE0E0F0" Margin="0,2,0,2">
-                                        <Run Text="语言：C# 12"/>
-                                    </TextBlock>
-                                    <TextBlock FontSize="12" Foreground="#CCE0E0F0" Margin="0,2,0,2">
-                                        <Run Text="平台：Windows x64"/>
-                                    </TextBlock>
-                                    <TextBlock FontSize="12" Foreground="#CCE0E0F0" Margin="0,2,0,2">
-                                        <Run Text="架构：MainWindow + SettingWindow + Settings JSON 持久化"/>
+                                    <TextBlock FontSize="12" Foreground="#AACCDDEE" Margin="0,1,0,1">
+                                        System.Drawing.Common
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
 
-                            <!-- 描述卡片 -->
+                            <!-- 功能亮点卡片 -->
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
-                                    <TextBlock Text="&#x1F4A1;  简介" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="&#x2728;  功能亮点" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
                                     <TextBlock FontSize="12" Foreground="#AACCDDEE" TextWrapping="Wrap"
-                                               LineHeight="20">
-                                        <Run Text="一款精致的桌面倒计时工具，专为高考考生设计。"/>
+                                               LineHeight="22">
+                                        <Run Text="&#x23F3; 精确到秒的倒计时，天/时/分/秒各部分可独立开关"/>
                                         <LineBreak/>
+                                        <Run Text="&#x1F30D; 中英双语显示，各行文字与颜色完全可定制"/>
                                         <LineBreak/>
-                                        <Run Text="功能亮点："/>
+                                        <Run Text="&#x1F4CA; 进度条直观展示高中生活完成度，百分比文字独立开关"/>
                                         <LineBreak/>
-                                        <Run Text="• 精确到秒的倒计时，支持自定义字体与配色"/>
+                                        <Run Text="&#x2601; 实时天气（窗口 + 文本两种模式），多城市自动定位"/>
                                         <LineBreak/>
-                                        <Run Text="• 中英双语显示，天/时/分/秒各部分可独立开关"/>
+                                        <Run Text="&#x1F4AC; 每日一言 API，励志语录随机展示"/>
                                         <LineBreak/>
-                                        <Run Text="• 进度条直观展示高中生活完成度"/>
+                                        <Run Text="&#x1F39B; 数字脉冲动画，流畅不卡顿（可关闭）"/>
                                         <LineBreak/>
-                                        <Run Text="• 数字脉冲动画，流畅不卡顿"/>
+                                        <Run Text="&#x1F3A8; 字号 / 字体 / 颜色 / 透明度 / 对齐 — 全部可调"/>
                                         <LineBreak/>
-                                        <Run Text="• 无边框透明窗口，多位置预设，始终置顶"/>
+                                        <Run Text="&#x1F4CC; 6 种位置预设 + 自定义坐标拖动定位 + Y 偏移"/>
+                                        <LineBreak/>
+                                        <Run Text="&#x1F4A1; 预设模式下鼠标穿透，不阻挡桌面操作"/>
+                                        <LineBreak/>
+                                        <Run Text="&#x1F4E6; 系统托盘常驻，右键菜单快捷切换"/>
+                                        <LineBreak/>
+                                        <Run Text="&#x1F4BE; JSON 配置持久化，关闭重启不丢失设置"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 更新日志卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="&#x1F4CB;  更新日志" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="v1.1" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="#FF6688CC" Margin="0,0,0,4"/>
+                                    <TextBlock FontSize="11" Foreground="#88CCCCDD" TextWrapping="Wrap" LineHeight="18">
+                                        <Run Text="• 实时天气模块，API 接口 + 窗口/文本双模式"/>
+                                        <LineBreak/>
+                                        <Run Text="• 每日一言 API 集成"/>
+                                        <LineBreak/>
+                                        <Run Text="• 窗口位置预设 + 拖动坐标实时跟踪"/>
+                                        <LineBreak/>
+                                        <Run Text="• 预设模式下点击穿透"/>
+                                        <LineBreak/>
+                                        <Run Text="• 自定义窗口图标与托盘图标"/>
                                     </TextBlock>
                                 </StackPanel>
                             </Border>

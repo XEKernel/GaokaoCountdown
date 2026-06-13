@@ -635,17 +635,18 @@ namespace GaokaoCountdown
 
         private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
-        private void GitHubLink_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void GitHubLink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
         {
             try
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = "https://github.com/SYSTEM-MEMZ-XEK/GaokaoCountdown",
+                    FileName = e.Uri.AbsoluteUri,
                     UseShellExecute = true
                 });
+                e.Handled = true;
             }
-            catch { /* 忽略浏览器打开失败 */ }
+            catch { }
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
