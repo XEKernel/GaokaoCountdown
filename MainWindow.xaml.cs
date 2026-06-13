@@ -382,6 +382,13 @@ namespace GaokaoCountdown
                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
         }
 
+        /// <summary>让进度条宽度匹配中文倒计时文字的实际渲染宽度</summary>
+        private void SyncProgressBarWidth()
+        {
+            ChinesePanel.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            ProgressBar.Width = ChinesePanel.DesiredSize.Width;
+        }
+
         // ── 定时器 ─────────────────────────────────────────────
         private void SetupTimer()
         {
@@ -489,6 +496,7 @@ namespace GaokaoCountdown
             double pct = progress * 100.0;
             ProgressText.Text   = $"高中生活已过去 {pct.ToString(fmt)}%";
             ProgressTextEn.Text = $"High school life has passed {pct.ToString(fmt)}%.";
+            SyncProgressBarWidth();
 
             // 字体同步
             ProgressText.FontFamily   = CountdownFontFamily;
@@ -638,6 +646,8 @@ namespace GaokaoCountdown
             ProgressTextEn.FontSize = ProgressText.FontSize * 0.9;
             ProgressText.FontFamily   = CountdownFontFamily;
             ProgressTextEn.FontFamily = CountdownFontFamily;
+
+            SyncProgressBarWidth();
 
             // 更新缩放中心（动态字号时居中）
             UpdateScaleCenters();
