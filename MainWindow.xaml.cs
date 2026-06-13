@@ -161,7 +161,6 @@ namespace GaokaoCountdown
         }
 
         // ── 入场动画 ─────────────────────────────────────────
-        private bool _introPlayed = false;  // 只播放一次
         private DispatcherTimer? _introTimer;
         private DateTime _introStart;
         private const double IntroDurationMs = 1250.0;
@@ -230,7 +229,7 @@ namespace GaokaoCountdown
         private void ToggleVisibility()
         {
             if (Visibility == Visibility.Visible) { Hide(); }
-            else { Show(); Activate(); ApplyWindowLayer(); }
+            else { Show(); Activate(); ApplyWindowLayer(); if (EnableAnimations) PlayIntroAnimation(); }
         }
 
         private void OpenSettings()
@@ -310,6 +309,7 @@ namespace GaokaoCountdown
                 _hiddenByMaximize = false;
                 Show();
                 ApplyWindowLayer();
+                if (EnableAnimations) PlayIntroAnimation();
             }
         }
 
@@ -632,17 +632,22 @@ namespace GaokaoCountdown
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             ApplyWindowLayer();
-            if (EnableAnimations && !_introPlayed)
+            if (EnableAnimations)
                 PlayIntroAnimation();
         }
 
         // ══════════════════════════════════════════════════════
         //  入场动画：数字 0→实际值滚动 + 进度条 0→当前值
-        //  持续 1250ms，PowerEaseOut(Power=8) 强力先快后慢
+        //  持续 1250ms，PowerEaseOut(Power=5) 先快后慢适中
         // ══════════════════════════════════════════════════════
         private void PlayIntroAnimation()
         {
-            _introPlayed = true;
+            // 若已有动画在运行，先停止
+            if (_introTimer != null)
+            {
+                _introTimer.Stop();
+                _introTimer = null;
+            }
 
             // 记录当前真实目标值
             DateTime now = DateTime.Now;
@@ -656,12 +661,12 @@ namespace GaokaoCountdown
             double daysPassed = (now - startDate).TotalDays;
             _introProgress = Math.Min(100, Math.Max(0, daysPassed / totalDays * 100.0));
 
-            // ── 进度条动画：0 → 当前值，1.25s 强力缓出 ──────────
+            // ── 进度条动画：0 → 当前值，1.25s 缓出 ──────────
             ProgressBar.Value = 0;
             var pbAnim = new DoubleAnimation(0, _introProgress,
                 new Duration(TimeSpan.FromMilliseconds(IntroDurationMs)))
             {
-                EasingFunction = new PowerEase { Power = 8, EasingMode = EasingMode.EaseOut }
+                EasingFunction = new PowerEase { Power = 5, EasingMode = EasingMode.EaseOut }
             };
             ProgressBar.BeginAnimation(System.Windows.Controls.ProgressBar.ValueProperty, pbAnim);
 
@@ -680,8 +685,8 @@ namespace GaokaoCountdown
             double elapsed = (DateTime.Now - _introStart).TotalMilliseconds;
             double t = Math.Min(1.0, elapsed / IntroDurationMs);
 
-            // PowerEaseOut (Power=8): 1 - (1-t)^8，先快后慢更明显
-            double eased = 1.0 - Math.Pow(1.0 - t, 8);
+            // PowerEaseOut (Power=5): 1 - (1-t)^5，先快后慢适中
+            double eased = 1.0 - Math.Pow(1.0 - t, 5);
 
             int days    = (int)Math.Round(eased * _introDays);
             int hours   = (int)Math.Round(eased * _introHours);

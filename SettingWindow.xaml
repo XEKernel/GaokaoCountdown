@@ -191,7 +191,7 @@
             </Setter>
         </Style>
 
-        <!-- ═══════ TabItem — 圆角胶囊（固定高度防位移） ═══════ -->
+                <!-- ═════ TabItem — 圆角胶囊（固定高度防位移） ═════ -->
         <Style TargetType="TabItem">
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -208,15 +208,75 @@
                                 Margin="0,0,2,0"
                                 SnapsToDevicePixels="True"
                                 UseLayoutRounding="True">
-                            <ContentPresenter
-                                ContentSource="Header"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                TextBlock.Foreground="#88CCCCDD"
-                                TextBlock.FontSize="13"/>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <ContentPresenter
+                                    Grid.Row="0"
+                                    ContentSource="Header"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    TextBlock.Foreground="#88CCCCDD"
+                                    TextBlock.FontSize="13"/>
+                                <!-- 底部指示条 -->
+                                <Rectangle x:Name="Indicator"
+                                           Grid.Row="1"
+                                           Height="3"
+                                           Margin="6,0,6,0"
+                                           Fill="#FF6688CC"
+                                           RadiusX="1.5"
+                                           RadiusY="1.5"
+                                           Opacity="0">
+                                    <Rectangle.RenderTransform>
+                                        <ScaleTransform ScaleX="0" ScaleY="1"/>
+                                    </Rectangle.RenderTransform>
+                                </Rectangle>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsSelected" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Indicator"
+                                                Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                From="0" To="1"
+                                                Duration="0:0:0.35">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <PowerEase Power="3" EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Indicator"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="0" To="1"
+                                                Duration="0:0:0.25"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Indicator"
+                                                Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                From="1" To="0"
+                                                Duration="0:0:0.25">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <PowerEase Power="3" EasingMode="EaseIn"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation
+                                                Storyboard.TargetName="Indicator"
+                                                Storyboard.TargetProperty="Opacity"
+                                                From="1" To="0"
+                                                Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
                                 <Setter TargetName="TabBorder" Property="Background" Value="#28FFFFFF"/>
                                 <Setter TargetName="TabBorder" Property="TextBlock.Foreground" Value="#FFFFFFFF"/>
                             </Trigger>
@@ -525,57 +585,52 @@
                 </Grid>
             </Border>
 
-            <!-- ══════ TabControl ══════ -->
-            <TabControl Grid.Row="1" Background="Transparent" BorderThickness="0"
-                        Margin="8,2,8,0"
-                        Name="MainTabControl"
-                        SelectionChanged="MainTabControl_SelectionChanged"
-                        TabStripPlacement="Top">
-            <!-- ═════  TabControl 自定义模板（固定顶部标签栏，禁止换行） ════ -->
-            <TabControl.Template>
-                <ControlTemplate TargetType="TabControl">
-                    <Grid SnapsToDevicePixels="True">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
+            <!-- ══════ TabControl（仅头部）+ 内容面板 ══════ -->
+            <Grid Grid.Row="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                        <!-- 标签头区域：StackPanel 横向不换行，ScrollViewer 隐藏滚动 -->
-                        <ScrollViewer Grid.Row="0"
-                                     HorizontalScrollBarVisibility="Hidden"
-                                     VerticalScrollBarVisibility="Disabled"
-                                     Background="Transparent"
-                                     CanContentScroll="False"
-                                     Padding="0">
-                            <StackPanel x:Name="HeaderPanel"
-                                        Orientation="Horizontal"
-                                        IsItemsHost="True"
-                                        Background="Transparent"
-                                        KeyboardNavigation.TabIndex="1"/>
-                        </ScrollViewer>
+                <!-- Tab 头部（仅 Header，无内容） -->
+                <TabControl Grid.Row="0" Background="Transparent" BorderThickness="0"
+                            Name="MainTabControl"
+                            SelectionChanged="MainTabControl_SelectionChanged"
+                            TabStripPlacement="Top">
+                    <TabControl.Template>
+                        <ControlTemplate TargetType="TabControl">
+                            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
+                                         VerticalScrollBarVisibility="Disabled"
+                                         Background="Transparent"
+                                         CanContentScroll="False"
+                                         Padding="0">
+                                <StackPanel x:Name="HeaderPanel"
+                                            Orientation="Horizontal"
+                                            IsItemsHost="True"
+                                            Background="Transparent"
+                                            KeyboardNavigation.TabIndex="1"/>
+                            </ScrollViewer>
+                        </ControlTemplate>
+                    </TabControl.Template>
 
-                        <!-- 内容区域 -->
-                        <Border Grid.Row="1"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}">
-                            <ContentPresenter x:Name="PART_SelectedContentHost"
-                                              ContentSource="SelectedContent"
-                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
-                        </Border>
-                    </Grid>
-                </ControlTemplate>
-            </TabControl.Template>
+                    <TabControl.Resources>
+                    </TabControl.Resources>
 
-            <TabControl.Resources>
-                <!-- 空：TabPanel Style 已不需要（HeaderPanel 是 StackPanel） -->
-            </TabControl.Resources>
+                    <TabItem Header="&#x1F3A8; 外观" />
+                    <TabItem Header="&#x1F4D0; 位置" />
+                    <TabItem Header="&#x1F441; 显示" />
+                    <TabItem Header="&#x270F; 文本" />
+                    <TabItem Header="&#x1F4C5; 日期" />
+                    <TabItem Header="&#x2728; 动画" />
+                    <TabItem Header="&#x2139; 关于" />
+                </TabControl>
 
-                <!-- ═══════ TAB 1：外观 ═══════ -->
-                <TabItem Header="&#x1F3A8; 外观">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <!-- 内容面板（手动切换，支持出入场动画） -->
+                <Grid Grid.Row="1" Margin="8,-2,8,0" ClipToBounds="True" x:Name="ContentHost">
+                    <!-- ═══ TAB 0：外观 ═══ -->
+                    <ScrollViewer x:Name="ContentAppearance" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Visible">
                         <StackPanel Margin="6,8,6,12">
-
                             <!-- 字体卡片 -->
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
@@ -650,14 +705,12 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 2：位置 ═══════ -->
-                <TabItem Header="&#x1F4D0; 位置">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 1：位置 ═══ -->
+                    <ScrollViewer x:Name="ContentPosition" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <Border Style="{StaticResource CardPanel}">
@@ -726,14 +779,12 @@
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 3：显示 ═══════ -->
-                <TabItem Header="&#x1F441; 显示">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 2：显示 ═══ -->
+                    <ScrollViewer x:Name="ContentDisplay" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <Border Style="{StaticResource CardPanel}">
@@ -778,14 +829,12 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 4：文本 ═══════ -->
-                <TabItem Header="&#x270F; 文本">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 3：文本 ═══ -->
+                    <ScrollViewer x:Name="ContentText" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <Border Style="{StaticResource CardPanel}">
@@ -819,14 +868,12 @@
                                     <TextBox Name="EnglishSecondsText"/>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 5：日期 ═══════ -->
-                <TabItem Header="&#x1F4C5; 日期">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 4：日期 ═══ -->
+                    <ScrollViewer x:Name="ContentDate" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <Border Style="{StaticResource CardPanel}">
@@ -852,14 +899,12 @@
                                 <TextBlock Foreground="#88CCCCDD" FontSize="11" TextWrapping="Wrap"
                                            Text="进度条显示从「起算日期」到「考试日期」之间已经过去的百分比。修改后点击「应用」立即生效。"/>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 6：动画 ═══════ -->
-                <TabItem Header="&#x2728; 动画">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 5：动画 ═══ -->
+                    <ScrollViewer x:Name="ContentAnimation" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <Border Style="{StaticResource CardPanel}">
@@ -893,14 +938,12 @@
                                 <TextBlock Foreground="#88CCCCDD" FontSize="11" TextWrapping="Wrap"
                                            Text="提示：窗口动画为本次生效，下次打开时重新读取保存的设置。"/>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
 
-                <!-- ═══════ TAB 7：关于 ═══════ -->
-                <TabItem Header="&#x2139; 关于">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- ═══ TAB 6：关于 ═══ -->
+                    <ScrollViewer x:Name="ContentAbout" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
                             <!-- 应用信息卡片 -->
@@ -970,12 +1013,10 @@
                                     </TextBlock>
                                 </StackPanel>
                             </Border>
-
                         </StackPanel>
                     </ScrollViewer>
-                </TabItem>
-
-            </TabControl>
+                </Grid>
+            </Grid>
 
             <!-- ══════ 底部按钮栏 ══════ -->
             <Border Grid.Row="2" Background="#08FFFFFF" CornerRadius="0,0,14,14">

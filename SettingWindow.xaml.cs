@@ -4,6 +4,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Media.Effects;
+using System.Windows.Shapes;
 using Forms = System.Windows.Forms;
 using WpfMessageBox = System.Windows.MessageBox;
 
@@ -16,8 +18,7 @@ namespace GaokaoCountdown
         // 运行时动画状态
         private bool _enableSettingsAnimations = true;
         private bool _isInitializing = true;   // 抑制初始加载时的 Tab 动画
-        private Style? _animatedRadioStyle;
-        private Style? _animatedCheckStyle;
+        private ScrollViewer[]? _tabContents;  // 索引 → 内容面板
 
         public SettingWindow(MainWindow window)
         {
@@ -34,12 +35,20 @@ namespace GaokaoCountdown
         {
             ContentRendered -= SettingWindow_ContentRendered;
 
+            // 建立 Tab 索引 → 内容面板映射
+            _tabContents = new[]
+            {
+                ContentAppearance,
+                ContentPosition,
+                ContentDisplay,
+                ContentText,
+                ContentDate,
+                ContentAnimation,
+                ContentAbout
+            };
+
             PopulateFontFamilies();
             LoadSettings();
-
-            // 缓存动画版控件样式
-            _animatedRadioStyle = (Style)FindResource("AnimatedRadioStyle");
-            _animatedCheckStyle = (Style)FindResource("AnimatedCheckStyle");
 
             // 根据设置应用 / 移除控件动画
             if (_enableSettingsAnimations)
@@ -52,7 +61,7 @@ namespace GaokaoCountdown
             TextColorBox.TextChanged        += TextColorBox_TextChanged;
             ProgressBarColorBox.TextChanged += ProgressBarColorBox_TextChanged;
 
-            // 窗口入场动画：对内容容器做淡入（不碰 Window.Opacity，避免无边框窗口渲染死锁）
+            // 窗口入场动画
             if (_enableSettingsAnimations)
             {
                 AnimateWindowEntrance();
@@ -61,10 +70,11 @@ namespace GaokaoCountdown
             // 允许后续 Tab 切换动画
             _isInitializing = false;
 
-            // 手动给第一个已选中的 Tab 做淡入
-            if (_enableSettingsAnimations && MainTabControl.SelectedItem is TabItem firstTab)
+            // 手动给第一个已选中的 Tab 做入场（默认从右侧滑入）
+            if (_enableSettingsAnimations && MainTabControl.SelectedIndex >= 0)
             {
-                FadeInTabContent(firstTab);
+                double w = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
+                SlideIn(_tabContents[MainTabControl.SelectedIndex], 1, w);
             }
         }
 
@@ -90,53 +100,126 @@ namespace GaokaoCountdown
         }
 
         // ══════════════════════════════════════════════════════
-        //  Tab 切换过渡动画
+        //  Tab 切换过渡动画（方向感知 — A 出 B 进真正并行平移）
         // ══════════════════════════════════════════════════════
+        //
+        //  核心思路：
+        //  ContentHost 设 ClipToBounds=True，裁掉视口外内容。
+        //  新页面起始 X = ±ContentHost.ActualWidth，确保初始在视口外，
+        //  旧页面终止 X = ∓ContentHost.ActualWidth，移出视口后再折叠。
+        //  两个动画时长完全相同 → 看起来像两页并肩平移，零重影。
+        //  不做 Opacity 淡入淡出，避免半透明叠加产生重影。
+
+        private ScrollViewer? _outgoingPanel;   // 正在离场的面板
 
         private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // 初始加载时不触发动画（ContentRendered 中手动处理）
             if (_isInitializing) return;
             if (!_enableSettingsAnimations) return;
-            if (e.AddedItems.Count == 0) return;
+            if (_tabContents == null) return;
 
-            if (e.AddedItems[0] is TabItem newTab)
+            TabItem? oldTab = e.RemovedItems.Count > 0 ? e.RemovedItems[0] as TabItem : null;
+            TabItem? newTab = e.AddedItems.Count   > 0 ? e.AddedItems[0]   as TabItem : null;
+            if (newTab == null) return;
+
+            int oldIndex = oldTab != null ? MainTabControl.Items.IndexOf(oldTab) : -1;
+            int newIndex = MainTabControl.Items.IndexOf(newTab);
+            if (newIndex < 0 || newIndex >= _tabContents.Length) return;
+
+            // 方向：向右切 = +1（新页从右侧滑入，旧页向左滑出）
+            int direction = oldIndex < 0 ? 1 : (newIndex > oldIndex ? 1 : -1);
+
+            // 获取容器宽度作为位移距离（保证新页在视口外起步）
+            double panelWidth = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
+
+            ScrollViewer newSv = _tabContents[newIndex];
+
+            // 快速切换：立即中止正在离场的面板
+            if (_outgoingPanel != null && _outgoingPanel != newSv)
             {
-                FadeInTabContent(newTab);
+                SnapCollapse(_outgoingPanel);
+                _outgoingPanel = null;
             }
-        }
 
-        /// <summary>为选中的 Tab 内容淡入</summary>
-        private static void FadeInTabContent(TabItem tabItem)
-        {
-            try
+            // 旧页滑出
+            if (oldIndex >= 0 && oldIndex < _tabContents.Length)
             {
-                if (tabItem.Content is ScrollViewer sv && sv.Content is StackPanel sp)
+                ScrollViewer oldSv = _tabContents[oldIndex];
+                if (oldSv != newSv)
                 {
-                    AnimateContainerOpacity(sp);
+                    _outgoingPanel = oldSv;
+                    SlideOut(oldSv, direction, panelWidth);
                 }
             }
-            catch
-            {
-                // 动画失败不影响功能
-            }
+
+            // 新页滑入（同步开始，同步时长）
+            SlideIn(newSv, direction, panelWidth);
         }
 
-        /// <summary>为容器子控件递归淡入（卡片逐个错落）</summary>
-        private static void AnimateContainerOpacity(Panel panel)
+        /// <summary>强制立即折叠并重置面板状态</summary>
+        private static void SnapCollapse(ScrollViewer sv)
         {
-            int stagger = 0;
-            foreach (UIElement child in panel.Children)
+            sv.BeginAnimation(UIElement.OpacityProperty, null);
+            if (sv.RenderTransform is TranslateTransform tt)
+                tt.BeginAnimation(TranslateTransform.XProperty, null);
+            sv.Visibility = Visibility.Collapsed;
+            sv.Opacity    = 1;
+            if (sv.RenderTransform is TranslateTransform tt2) tt2.X = 0;
+        }
+
+        private static readonly Duration SlideTime = new Duration(TimeSpan.FromSeconds(1.5));
+        private static readonly IEasingFunction SlideEase =
+            new PowerEase { Power = 3, EasingMode = EasingMode.EaseOut };
+
+        /// <summary>新页面滑入：从视口外平移到 X=0</summary>
+        private static void SlideIn(ScrollViewer sv, int direction, double width)
+        {
+            EnsureTranslate(sv);
+
+            // 停旧动画
+            sv.BeginAnimation(UIElement.OpacityProperty, null);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
+
+            // 从视口外出发
+            double startX = direction >= 0 ? width : -width;
+            ((TranslateTransform)sv.RenderTransform).X = startX;
+            sv.Opacity = 1;
+            sv.Visibility = Visibility.Visible;
+
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(
+                TranslateTransform.XProperty,
+                new DoubleAnimation(startX, 0, SlideTime) { EasingFunction = SlideEase });
+        }
+
+        /// <summary>旧页面滑出：从 X=0 平移出视口，完成后折叠</summary>
+        private void SlideOut(ScrollViewer sv, int direction, double width)
+        {
+            EnsureTranslate(sv);
+
+            // 停旧动画
+            sv.BeginAnimation(UIElement.OpacityProperty, null);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
+
+            double endX = direction >= 0 ? -width : width;
+            ((TranslateTransform)sv.RenderTransform).X = 0;
+            sv.Opacity = 1;
+
+            var xAnim = new DoubleAnimation(0, endX, SlideTime) { EasingFunction = SlideEase };
+            xAnim.Completed += (_, _) =>
             {
-                child.Opacity = 0;
-                var anim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(350))
+                if (_outgoingPanel == sv)
                 {
-                    BeginTime = TimeSpan.FromMilliseconds(stagger * 70),
-                    EasingFunction = new SineEaseEase { EasingMode = EasingMode.EaseOut }
-                };
-                child.BeginAnimation(UIElement.OpacityProperty, anim);
-                stagger++;
-            }
+                    SnapCollapse(sv);
+                    _outgoingPanel = null;
+                }
+            };
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, xAnim);
+        }
+
+        private static void EnsureTranslate(ScrollViewer sv)
+        {
+            if (sv.RenderTransform is not TranslateTransform)
+                sv.RenderTransform = new TranslateTransform();
         }
 
         // ══════════════════════════════════════════════════════
@@ -437,6 +520,7 @@ namespace GaokaoCountdown
         private void EnableSettingsAnimationsCheck_Changed(object sender, RoutedEventArgs e)
         {
             _enableSettingsAnimations = EnableSettingsAnimationsCheck.IsChecked == true;
+            if (_isInitializing) return;
             if (_enableSettingsAnimations)
                 ApplyControlAnimations();
             else
@@ -455,22 +539,311 @@ namespace GaokaoCountdown
             _mainWindow.HideWhenMaximized = HideWhenMaximizedCheck.IsChecked == true;
         }
 
-        // ══════════════════════════════════════════════════════
-        //  控件动画开关（RadioButton / CheckBox）
-        // ══════════════════════════════════════════════════════
+        // ── 控件动画开关 ────────────────────────────────────
 
         private void ApplyControlAnimations()
         {
-            if (_animatedRadioStyle != null)
-                Resources[typeof(RadioButton)] = _animatedRadioStyle;
-            if (_animatedCheckStyle != null)
-                Resources[typeof(CheckBox)] = _animatedCheckStyle;
+            Resources[typeof(RadioButton)] = BuildAnimatedRadioStyle();
+            Resources[typeof(CheckBox)]    = BuildAnimatedCheckStyle();
         }
 
         private void RemoveControlAnimations()
         {
             Resources.Remove(typeof(RadioButton));
             Resources.Remove(typeof(CheckBox));
+        }
+
+        // ── 在 C# 中构建动画控件样式（统一 1.5 秒） ──────────
+
+        /// <summary>构建带动画的 RadioButton 样式（全部 1.5s）</summary>
+        private static Style BuildAnimatedRadioStyle()
+        {
+            // ── 外层 Border ──────────────────────────────────────
+            var radioOuter = new FrameworkElementFactory(typeof(Border));
+            radioOuter.Name = "RadioOuter";
+            radioOuter.SetValue(Border.WidthProperty, 18.0);
+            radioOuter.SetValue(Border.HeightProperty, 18.0);
+            radioOuter.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+            radioOuter.SetValue(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#22FFFFFF")));
+            radioOuter.SetValue(Border.BorderBrushProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#44FFFFFF")));
+            radioOuter.SetValue(Border.BorderThicknessProperty, new Thickness(1.5));
+            radioOuter.SetValue(Border.MarginProperty, new Thickness(0, 0, 8, 0));
+            radioOuter.SetValue(Border.SnapsToDevicePixelsProperty, true);
+
+            // ── 内点 ────────────────────────────────────────────
+            var radioDot = new FrameworkElementFactory(typeof(Ellipse));
+            radioDot.Name = "RadioDot";
+            radioDot.SetValue(Ellipse.WidthProperty, 8.0);
+            radioDot.SetValue(Ellipse.HeightProperty, 8.0);
+            radioDot.SetValue(Ellipse.FillProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6688CC")));
+            radioDot.SetValue(Ellipse.OpacityProperty, 0.0);
+            radioDot.SetValue(Ellipse.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            radioDot.SetValue(Ellipse.VerticalAlignmentProperty, VerticalAlignment.Center);
+            radioOuter.AppendChild(radioDot);
+
+            // ── ContentPresenter ─────────────────────────────────
+            var cp = new FrameworkElementFactory(typeof(ContentPresenter));
+            cp.SetValue(Grid.ColumnProperty, 1);
+            cp.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
+            cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            cp.SetValue(ContentPresenter.MarginProperty, new Thickness(2, 0, 0, 0));
+            cp.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+
+            // ── 根 Grid ─────────────────────────────────────────
+            var root = new FrameworkElementFactory(typeof(Grid));
+            root.SetValue(Grid.BackgroundProperty, Brushes.Transparent);
+            var cd0 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            cd0.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
+            var cd1 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            cd1.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
+            root.AppendChild(cd0);
+            root.AppendChild(cd1);
+            root.AppendChild(radioOuter);
+            root.AppendChild(cp);
+
+            // ── ControlTemplate ──────────────────────────────────
+            var template = new ControlTemplate(typeof(RadioButton)) { VisualTree = root };
+
+            // ── 稳态 Trigger ────────────────────────────────────
+            var isCheckedTrigger = new Trigger
+            {
+                Property = RadioButton.IsCheckedProperty,
+                Value = true
+            };
+            isCheckedTrigger.Setters.Add(new Setter(Ellipse.OpacityProperty, 1.0, "RadioDot"));
+            isCheckedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6688CC")), "RadioOuter"));
+            isCheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#186688CC")), "RadioOuter"));
+            template.Triggers.Add(isCheckedTrigger);
+
+            // MouseOver + !Checked
+            var hoverTrigger = new MultiTrigger();
+            hoverTrigger.Conditions.Add(new Condition(RadioButton.IsMouseOverProperty, true));
+            hoverTrigger.Conditions.Add(new Condition(RadioButton.IsCheckedProperty, false));
+            hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#33FFFFFF")), "RadioOuter"));
+            hoverTrigger.Setters.Add(new Setter(Border.BorderBrushProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#66FFFFFF")), "RadioOuter"));
+            template.Triggers.Add(hoverTrigger);
+
+            // MouseOver + Checked
+            var hoverCheckedTrigger = new MultiTrigger();
+            hoverCheckedTrigger.Conditions.Add(new Condition(RadioButton.IsMouseOverProperty, true));
+            hoverCheckedTrigger.Conditions.Add(new Condition(RadioButton.IsCheckedProperty, true));
+            hoverCheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#226688CC")), "RadioOuter"));
+            template.Triggers.Add(hoverCheckedTrigger);
+
+            // IsEnabled = false
+            var disabledTrigger = new Trigger
+            {
+                Property = UIElement.IsEnabledProperty,
+                Value = false
+            };
+            disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.4));
+            template.Triggers.Add(disabledTrigger);
+
+            // ── Checked 动画（1.5s） ─────────────────────────────
+            var checkedSB = new Storyboard { FillBehavior = FillBehavior.Stop };
+
+            var dotWAnim = new DoubleAnimation(0, 8, TimeSpan.FromSeconds(0.35))
+            {
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
+            };
+            Storyboard.SetTargetName(dotWAnim, "RadioDot");
+            Storyboard.SetTargetProperty(dotWAnim, new PropertyPath(Ellipse.WidthProperty));
+            checkedSB.Children.Add(dotWAnim);
+
+            var dotHAnim = new DoubleAnimation(0, 8, TimeSpan.FromSeconds(0.35))
+            {
+                EasingFunction = new BackEase { EasingMode = EasingMode.EaseOut, Amplitude = 0.35 }
+            };
+            Storyboard.SetTargetName(dotHAnim, "RadioDot");
+            Storyboard.SetTargetProperty(dotHAnim, new PropertyPath(Ellipse.HeightProperty));
+            checkedSB.Children.Add(dotHAnim);
+
+            var dotOpAnim = new DoubleAnimation(0, 1, TimeSpan.FromSeconds(0.35));
+            Storyboard.SetTargetName(dotOpAnim, "RadioDot");
+            Storyboard.SetTargetProperty(dotOpAnim, new PropertyPath(Ellipse.OpacityProperty));
+            checkedSB.Children.Add(dotOpAnim);
+
+            var checkedET = new EventTrigger(RadioButton.CheckedEvent);
+            checkedET.Actions.Add(new BeginStoryboard { Storyboard = checkedSB });
+            template.Triggers.Add(checkedET);
+
+            // ── Unchecked 动画（1.5s） ───────────────────────────
+            var uncheckedSB = new Storyboard { FillBehavior = FillBehavior.Stop };
+
+            var dotWOut = new DoubleAnimation(0, TimeSpan.FromSeconds(0.35));
+            Storyboard.SetTargetName(dotWOut, "RadioDot");
+            Storyboard.SetTargetProperty(dotWOut, new PropertyPath(Ellipse.WidthProperty));
+            uncheckedSB.Children.Add(dotWOut);
+
+            var dotHOut = new DoubleAnimation(0, TimeSpan.FromSeconds(0.35));
+            Storyboard.SetTargetName(dotHOut, "RadioDot");
+            Storyboard.SetTargetProperty(dotHOut, new PropertyPath(Ellipse.HeightProperty));
+            uncheckedSB.Children.Add(dotHOut);
+
+            var dotOpOut = new DoubleAnimation(0, TimeSpan.FromSeconds(0.35));
+            Storyboard.SetTargetName(dotOpOut, "RadioDot");
+            Storyboard.SetTargetProperty(dotOpOut, new PropertyPath(Ellipse.OpacityProperty));
+            uncheckedSB.Children.Add(dotOpOut);
+
+            var uncheckedET = new EventTrigger(RadioButton.UncheckedEvent);
+            uncheckedET.Actions.Add(new BeginStoryboard { Storyboard = uncheckedSB });
+            template.Triggers.Add(uncheckedET);
+
+            // ── Style ───────────────────────────────────────────
+            var style = new Style(typeof(RadioButton));
+            style.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 3, 12, 3)));
+            style.Setters.Add(new Setter(Control.FontSizeProperty, 12.0));
+            style.Setters.Add(new Setter(Control.ForegroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CCE0E0F0"))));
+            style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+
+            return style;
+        }
+
+        /// <summary>构建带动画的 CheckBox 样式（全部 1.5s）</summary>
+        private static Style BuildAnimatedCheckStyle()
+        {
+            // ── 轨道 ─────────────────────────────────────────────
+            var switchTrack = new FrameworkElementFactory(typeof(Border));
+            switchTrack.Name = "SwitchTrack";
+            switchTrack.SetValue(Border.WidthProperty, 40.0);
+            switchTrack.SetValue(Border.HeightProperty, 22.0);
+            switchTrack.SetValue(Border.CornerRadiusProperty, new CornerRadius(11));
+            switchTrack.SetValue(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#22FFFFFF")));
+            switchTrack.SetValue(Border.BorderBrushProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#30FFFFFF")));
+            switchTrack.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            switchTrack.SetValue(Border.MarginProperty, new Thickness(0, 0, 8, 0));
+
+            // ── 滑块 ────────────────────────────────────────────
+            var switchThumb = new FrameworkElementFactory(typeof(Border));
+            switchThumb.Name = "SwitchThumb";
+            switchThumb.SetValue(Border.WidthProperty, 18.0);
+            switchThumb.SetValue(Border.HeightProperty, 18.0);
+            switchThumb.SetValue(Border.CornerRadiusProperty, new CornerRadius(9));
+            switchThumb.SetValue(Border.BackgroundProperty, Brushes.White);
+            switchThumb.SetValue(Border.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+            switchThumb.SetValue(Border.MarginProperty, new Thickness(2, 0, 0, 0));
+            var shadow = new DropShadowEffect { ShadowDepth = 0.5, BlurRadius = 3, Opacity = 0.3 };
+            switchThumb.SetValue(Border.EffectProperty, shadow);
+
+            // ── ContentPresenter ─────────────────────────────────
+            var cp = new FrameworkElementFactory(typeof(ContentPresenter));
+            cp.SetValue(Grid.ColumnProperty, 1);
+            cp.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ContentControl.ContentProperty));
+            cp.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            cp.SetValue(ContentPresenter.MarginProperty, new Thickness(2, 0, 0, 0));
+            cp.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+
+            // ── 根 Grid ─────────────────────────────────────────
+            var root = new FrameworkElementFactory(typeof(Grid));
+            root.SetValue(Grid.BackgroundProperty, Brushes.Transparent);
+            var cd0 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            cd0.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
+            var cd1 = new FrameworkElementFactory(typeof(ColumnDefinition));
+            cd1.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
+            root.AppendChild(cd0);
+            root.AppendChild(cd1);
+            root.AppendChild(switchTrack);
+            root.AppendChild(switchThumb);
+            root.AppendChild(cp);
+
+            // ── ControlTemplate ──────────────────────────────────
+            var template = new ControlTemplate(typeof(CheckBox)) { VisualTree = root };
+
+            // ── 稳态 Trigger ────────────────────────────────────
+            var isCheckedTrigger = new Trigger
+            {
+                Property = CheckBox.IsCheckedProperty,
+                Value = true
+            };
+            isCheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#446688CC")), "SwitchTrack"));
+            isCheckedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF6688CC")), "SwitchTrack"));
+            isCheckedTrigger.Setters.Add(new Setter(Border.MarginProperty,
+                new Thickness(20, 0, 0, 0), "SwitchThumb"));
+            isCheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty, Brushes.White, "SwitchThumb"));
+            template.Triggers.Add(isCheckedTrigger);
+
+            // MouseOver + !Checked
+            var hoverTrigger = new MultiTrigger();
+            hoverTrigger.Conditions.Add(new Condition(UIElement.IsMouseOverProperty, true));
+            hoverTrigger.Conditions.Add(new Condition(CheckBox.IsCheckedProperty, false));
+            hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#33FFFFFF")), "SwitchTrack"));
+            template.Triggers.Add(hoverTrigger);
+
+            // MouseOver + Checked
+            var hoverCheckedTrigger = new MultiTrigger();
+            hoverCheckedTrigger.Conditions.Add(new Condition(UIElement.IsMouseOverProperty, true));
+            hoverCheckedTrigger.Conditions.Add(new Condition(CheckBox.IsCheckedProperty, true));
+            hoverCheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#556688CC")), "SwitchTrack"));
+            template.Triggers.Add(hoverCheckedTrigger);
+
+            // IsEnabled = false
+            var disabledTrigger = new Trigger
+            {
+                Property = UIElement.IsEnabledProperty,
+                Value = false
+            };
+            disabledTrigger.Setters.Add(new Setter(UIElement.OpacityProperty, 0.4));
+            template.Triggers.Add(disabledTrigger);
+
+            // ── Checked 动画（1.5s） ─────────────────────────────
+            var checkedSB = new Storyboard { FillBehavior = FillBehavior.Stop };
+            var thumbInAnim = new ThicknessAnimation(
+                new Thickness(2, 0, 0, 0),
+                new Thickness(20, 0, 0, 0),
+                TimeSpan.FromSeconds(0.35))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTargetName(thumbInAnim, "SwitchThumb");
+            Storyboard.SetTargetProperty(thumbInAnim, new PropertyPath(Border.MarginProperty));
+            checkedSB.Children.Add(thumbInAnim);
+
+            var checkedET = new EventTrigger(CheckBox.CheckedEvent);
+            checkedET.Actions.Add(new BeginStoryboard { Storyboard = checkedSB });
+            template.Triggers.Add(checkedET);
+
+            // ── Unchecked 动画（1.5s） ───────────────────────────
+            var uncheckedSB = new Storyboard { FillBehavior = FillBehavior.Stop };
+            var thumbOutAnim = new ThicknessAnimation(
+                new Thickness(20, 0, 0, 0),
+                new Thickness(2, 0, 0, 0),
+                TimeSpan.FromSeconds(0.35))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTargetName(thumbOutAnim, "SwitchThumb");
+            Storyboard.SetTargetProperty(thumbOutAnim, new PropertyPath(Border.MarginProperty));
+            uncheckedSB.Children.Add(thumbOutAnim);
+
+            var uncheckedET = new EventTrigger(CheckBox.UncheckedEvent);
+            uncheckedET.Actions.Add(new BeginStoryboard { Storyboard = uncheckedSB });
+            template.Triggers.Add(uncheckedET);
+
+            // ── Style ───────────────────────────────────────────
+            var style = new Style(typeof(CheckBox));
+            style.Setters.Add(new Setter(FrameworkElement.CursorProperty, Cursors.Hand));
+            style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 5, 0, 7)));
+            style.Setters.Add(new Setter(Control.FontSizeProperty, 13.0));
+            style.Setters.Add(new Setter(Control.ForegroundProperty,
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CCE0E0F0"))));
+            style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
+            style.Setters.Add(new Setter(Control.TemplateProperty, template));
+
+            return style;
         }
 
         // ══════════════════════════════════════════════════════
