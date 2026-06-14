@@ -1,11 +1,11 @@
-<Window x:Class="GaokaoCountdown.SettingWindow"
+﻿<Window x:Class="GaokaoCountdown.SettingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="设置"
-        Height="650"
-        Width="580"
-        MinHeight="600"
-        MinWidth="540"
+        Height="700"
+        Width="780"
+        MinHeight="650"
+        MinWidth="720"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -193,10 +193,10 @@
 
                 <!-- ═════ TabItem — 圆角胶囊（固定高度防位移） ═════ -->
         <Style TargetType="TabItem">
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontSize" Value="11"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="8,0"/>
-            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Padding" Value="5,0"/>
+            <Setter Property="MinHeight" Value="32"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
@@ -540,6 +540,87 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <!-- ══════ DataGrid 暗色主题样式 ══════ -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#AA0D0D1A"/>
+            <Setter Property="Foreground" Value="#FFCCCCDD"/>
+            <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="RowBackground" Value="#AA1A1A2E"/>
+            <Setter Property="AlternatingRowBackground" Value="#BB13132A"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#20FFFFFF"/>
+            <Setter Property="VerticalGridLinesBrush" Value="#15FFFFFF"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="SelectionMode" Value="Single"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="RowHeight" Value="28"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#CC0D0D1A"/>
+            <Setter Property="Foreground" Value="#FFFFFFFF"/>
+            <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+            <Setter Property="Padding" Value="6,4,6,4"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="#10FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#662E86C1"/>
+                    <Setter Property="BorderBrush" Value="#FF5B9BD5"/>
+                    <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#332E86C1"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4,0,4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter VerticalAlignment="Center"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridRowHeader">
+            <Setter Property="Background" Value="#CC0D0D1A"/>
+            <Setter Property="BorderBrush" Value="#30FFFFFF"/>
+            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+            <Setter Property="Width" Value="0"/>
+        </Style>
+
     </Window.Resources>
 
     <!-- ══════════════════════════════════════════════════════
@@ -623,6 +704,8 @@
                     <TabItem Header="&#x1F4C5; 日期" />
                     <TabItem Header="&#x2728; 动画" />
                     <TabItem Header="&#x1F50C; API" />
+                    <TabItem Header="&#x1F4CB; 课表" />
+                    <TabItem Header="&#x1F4DD; 考试" />
                     <TabItem Header="&#x2139; 关于" />
                 </TabControl>
 
@@ -1079,17 +1162,6 @@
 
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
-                                    <TextBlock Text="天气开关" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
-                                    <CheckBox Name="ShowWeatherCheck"
-                                              Content="显示天气悬浮窗口"/>
-                                    <TextBlock Text="天气数据来自 uapis.cn，自动定位到指定城市"
-                                               FontSize="11" Foreground="#66CCCCDD"
-                                               Margin="20,0,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardPanel}">
-                                <StackPanel>
                                     <TextBlock Text="城市设置" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
                                     <Grid Margin="0,2,0,6">
                                         <Grid.ColumnDefinitions>
@@ -1124,66 +1196,6 @@
                                     <TextBlock Text="城市名必填；adcode 可选（6 位数字，如 110105=朝阳区）"
                                                FontSize="11" Foreground="#55CCCCDD"
                                                Margin="70,0,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardPanel}">
-                                <StackPanel>
-                                    <TextBlock Text="显示模式" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
-                                    <RadioButton Name="WeatherModeText" GroupName="WeatherModeGroup"
-                                                 Checked="WeatherMode_Changed">文字模式（半透明悬浮）</RadioButton>
-                                    <RadioButton Name="WeatherModeWindow" GroupName="WeatherModeGroup"
-                                                 Checked="WeatherMode_Changed">窗口模式（带边框卡片）</RadioButton>
-                                    <TextBlock Text="文字模式类似倒计时主窗口；窗口模式带圆角卡片背景"
-                                               FontSize="11" Foreground="#66CCCCDD"
-                                               Margin="20,0,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardPanel}">
-                                <StackPanel>
-                                    <TextBlock Text="窗口位置" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
-
-                                    <!-- 位置预设 -->
-                                    <RadioButton Name="WeatherPosCustom" GroupName="WeatherPosGroup"
-                                                 Checked="WeatherPosCustom_Checked" Unchecked="WeatherPosCustom_Unchecked"
-                                                 Margin="0,3,12,0">自定义坐标</RadioButton>
-                                    <RadioButton Name="WeatherPosTopRight" GroupName="WeatherPosGroup" IsChecked="True">右上角</RadioButton>
-                                    <RadioButton Name="WeatherPosBottomRight" GroupName="WeatherPosGroup">右下角</RadioButton>
-                                    <RadioButton Name="WeatherPosTopLeft" GroupName="WeatherPosGroup">左上角</RadioButton>
-                                    <RadioButton Name="WeatherPosBottomLeft" GroupName="WeatherPosGroup">左下角</RadioButton>
-                                    <RadioButton Name="WeatherPosTopCenter" GroupName="WeatherPosGroup">顶部居中</RadioButton>
-
-                                    <!-- 自定义坐标面板 -->
-                                    <StackPanel x:Name="WeatherCustomPosPanel" IsEnabled="False" Opacity="0.5" Margin="0,8,0,0">
-                                        <Grid Margin="0,2,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="70"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="70"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="X 坐标" Foreground="#88CCCCDD"
-                                                       FontSize="12" VerticalAlignment="Center"/>
-                                            <TextBox Grid.Column="1" x:Name="WeatherXBox"
-                                                     Height="28" ToolTip="留空或 -1 时自动定位到右上角"
-                                                     Foreground="#CCCCCCDD"
-                                                     Background="#15FFFFFF"
-                                                     BorderBrush="#20FFFFFF"
-                                                     SelectionBrush="#336688CC"/>
-                                            <TextBlock Grid.Column="2" Text="Y 坐标" Foreground="#88CCCCDD"
-                                                       FontSize="12" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                            <TextBox Grid.Column="3" x:Name="WeatherYBox"
-                                                     Height="28" ToolTip="留空或 -1 时自动定位到右上角"
-                                                     Foreground="#CCCCCCDD"
-                                                     Background="#15FFFFFF"
-                                                     BorderBrush="#20FFFFFF"
-                                                     SelectionBrush="#336688CC"/>
-                                        </Grid>
-                                        <TextBlock Text="拖动天气窗口即自动切换为自定义坐标"
-                                                   FontSize="11" Foreground="#55CCCCDD"
-                                                   Margin="70,0,0,0" TextWrapping="Wrap"/>
-                                    </StackPanel>
                                 </StackPanel>
                             </Border>
 
@@ -1280,20 +1292,13 @@
                                     <TextBlock Text="0 = 不自动刷新；单位：分钟"
                                                FontSize="11" Foreground="#55CCCCDD"
                                                Margin="70,0,0,0" TextWrapping="Wrap"/>
-
-                                    <CheckBox Name="WeatherAlwaysOnTopCheck"
-                                              Content="始终置顶"
-                                              Margin="0,12,0,0"/>
-                                    <TextBlock Text="选中后天气窗口覆盖在其他窗口上方"
-                                               FontSize="11" Foreground="#66CCCCDD"
-                                               Margin="20,0,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
                             </Border>
 
                             <Border Background="#10FFFFFF" CornerRadius="6" Padding="10" Margin="0,4,0,0"
                                     BorderBrush="#15FFFFFF" BorderThickness="1">
                                 <TextBlock Foreground="#88CCCCDD" FontSize="11" TextWrapping="Wrap"
-                                           Text="提示：修改后点击「应用」生效。每日一言自动切换静默进行；双击天气窗口可手动刷新。"/>
+                                           Text="提示：修改后点击「应用」生效。天气信息显示在课表栏和考试模式窗口中。"/>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
@@ -1475,6 +1480,295 @@
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
+
+                    <!-- ═══ TAB 8：课表 ═══ -->
+                    <ScrollViewer x:Name="ContentSchedule" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
+                        <StackPanel Margin="6,8,6,12">
+
+                            <!-- 课表开关卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="课表栏" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
+                                    <CheckBox x:Name="ShowScheduleBarCheck" Content="启用课表悬浮栏（吸附屏幕顶部）"/>
+                                    <CheckBox x:Name="ScheduleBarAlwaysOnTopCheck" Content="始终置顶" Margin="0,6,0,0"/>
+                                    <CheckBox x:Name="ScheduleBarClickThroughCheck" Content="鼠标点击穿透" Margin="0,4,0,0"/>
+                                    <TextBlock Text="透明度" Margin="0,10,0,2"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Slider x:Name="ScheduleBarOpacitySlider"
+                                                Width="200" Minimum="0.2" Maximum="1.0" SmallChange="0.05"
+                                                TickFrequency="0.1"/>
+                                        <TextBlock x:Name="ScheduleBarOpacityLabel" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="栏宽度（0 = 全屏宽度，像素）" Margin="0,10,0,2"/>
+                                    <TextBox x:Name="ScheduleBarWidthBox" Width="120" HorizontalAlignment="Left"
+                                             Background="#22FFFFFF" Foreground="White" BorderBrush="#44FFFFFF"
+                                             Padding="6,3"/>
+
+                                    <TextBlock Text="文字大小" Margin="0,14,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="字号" Foreground="#88CCCCDD"
+                                                   FontSize="12" VerticalAlignment="Center"/>
+                                        <Slider Grid.Column="1" x:Name="ScheduleBarFontSizeSlider"
+                                                Minimum="8" Maximum="28" TickFrequency="1"
+                                                IsSnapToTickEnabled="True"
+                                                ValueChanged="ScheduleBarFontSizeSlider_ValueChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="ScheduleBarFontSizeText"
+                                                   Foreground="#FFFFFFFF" FontSize="12"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <TextBlock Text="调节课表栏中所有文字的大小"
+                                               FontSize="11" Foreground="#66CCCCDD"
+                                               Margin="70,0,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 提醒开关卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="提醒设置" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
+                                    <CheckBox x:Name="EnableReminderSoundCheck" Content="启用提醒声音"/>
+                                    <TextBlock Text="提醒声音文件路径（空 = 使用系统提示音）" Margin="0,8,0,2"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="ReminderSoundPathBox" Width="270"
+                                                 Background="#22FFFFFF" Foreground="White" BorderBrush="#44FFFFFF"
+                                                 Padding="6,3"/>
+                                        <Button Content="浏览…" Click="BrowseReminderSound_Click"
+                                                Width="56" Margin="8,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="提醒场景开关" Margin="0,14,0,6" FontSize="12" Foreground="#AACCCCDD"/>
+                                    <CheckBox x:Name="RemindClassStartCheck" Content="上课时间到"/>
+                                    <CheckBox x:Name="RemindClassMidCheck"   Content="上课后 20 分钟" Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="RemindClassEndSoonCheck" Content="距下课还有 1 分钟（触发 60 秒倒计时）" Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="RemindClassEndCheck"   Content="下课时间到" Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="RemindNextClassSoonCheck" Content="距下节课还有 5 分钟" Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="RemindDayEndCheck"     Content="放学（最后一节下课）" Margin="0,4,0,0"/>
+                                    <CheckBox x:Name="RemindSpecialPeriodCheck" Content="早自习 / 晚自习 / 晚读 开始 / 结束" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 课表数据编辑卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="课表数据编辑" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Button Content="＋ 添加课节" Click="AddScheduleEntry_Click"
+                                                Width="100" Background="#332D5A3D"/>
+                                        <Button Content="－ 删除选中" Click="DeleteScheduleEntry_Click"
+                                                Width="90" Margin="6,0,0,0" Background="#33552222"/>
+                                        <Button Content="保存课表" Click="SaveSchedule_Click"
+                                                Width="80" Margin="6,0,0,0"/>
+                                        <StackPanel Orientation="Horizontal" Margin="12,0,0,0">
+                                            <Button Content="从 JSON 导入" Click="ImportScheduleJson_Click" Width="100"/>
+                                            <Button Content="导出 JSON" Click="ExportScheduleJson_Click" Width="80" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <DataGrid x:Name="ScheduleDataGrid"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              RowHeight="28"
+                                              MaxHeight="340"
+                                              Background="#11FFFFFF"
+                                              Foreground="#DDFFFFFF"
+                                              RowBackground="#00FFFFFF"
+                                              AlternatingRowBackground="#08FFFFFF"
+                                              BorderBrush="#22FFFFFF"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="#15FFFFFF"
+                                              SelectionMode="Single"
+                                              SelectionUnit="FullRow"
+                                              CanUserResizeRows="False"
+                                              EnableRowVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridComboBoxColumn Header="星期" Width="65"
+                                                SelectedValueBinding="{Binding DayOfWeek}"
+                                                SelectedValuePath="Value" DisplayMemberPath="Key">
+                                                <DataGridComboBoxColumn.ElementStyle>
+                                                    <Style TargetType="ComboBox">
+                                                        <Setter Property="FontSize" Value="11"/>
+                                                    </Style>
+                                                </DataGridComboBoxColumn.ElementStyle>
+                                                <DataGridComboBoxColumn.EditingElementStyle>
+                                                    <Style TargetType="ComboBox">
+                                                        <Setter Property="FontSize" Value="11"/>
+                                                    </Style>
+                                                </DataGridComboBoxColumn.EditingElementStyle>
+                                            </DataGridComboBoxColumn>
+                                            <DataGridTextColumn Header="节次" Width="45" Binding="{Binding Period}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="课程" Width="100" Binding="{Binding Subject}" IsReadOnly="False"/>
+                                            <DataGridTextColumn Header="上课" Width="60" Binding="{Binding StartTimeStr}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="下课" Width="60" Binding="{Binding EndTimeStr}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridComboBoxColumn Header="类型" Width="70"
+                                                SelectedValueBinding="{Binding Type}"
+                                                SelectedValuePath="Value" DisplayMemberPath="Key">
+                                                <DataGridComboBoxColumn.ElementStyle>
+                                                    <Style TargetType="ComboBox">
+                                                        <Setter Property="FontSize" Value="11"/>
+                                                    </Style>
+                                                </DataGridComboBoxColumn.ElementStyle>
+                                                <DataGridComboBoxColumn.EditingElementStyle>
+                                                    <Style TargetType="ComboBox">
+                                                        <Setter Property="FontSize" Value="11"/>
+                                                    </Style>
+                                                </DataGridComboBoxColumn.EditingElementStyle>
+                                            </DataGridComboBoxColumn>
+                                            <DataGridTextColumn Header="备注" Width="*" Binding="{Binding Remark}" IsReadOnly="False"/>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <TextBlock x:Name="ScheduleStatusTb" FontSize="12" Foreground="#88CCCCDD"
+                                               Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ═══ TAB 9：考试模式 ═══ -->
+                    <ScrollViewer x:Name="ContentExam" VerticalScrollBarVisibility="Auto"
+                                  Visibility="Collapsed">
+                        <StackPanel Margin="6,8,6,12">
+
+                            <!-- 考试模式开关卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="考试模式" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
+                                    <CheckBox x:Name="EnableExamModeCheck" Content="启用考试模式（提醒服务检查当天考试）"/>
+                                    <CheckBox x:Name="AutoEnterExamModeCheck" Content="当天有考试时，自动进入考试全屏窗口" Margin="0,6,0,0"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                        <Button Content="立即进入考试模式" Click="EnterExamMode_Click" Background="#442D5A3D"/>
+                                        <Button Content="退出考试模式" Click="ExitExamMode_Click" Margin="8,0,0,0"/>
+                                    </StackPanel>
+
+                                    <TextBlock Text="时间文字大小" Margin="0,18,0,4"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="50"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="字号" Foreground="#88CCCCDD"
+                                                   FontSize="12" VerticalAlignment="Center"/>
+                                        <Slider Grid.Column="1" x:Name="ExamModeFontSizeSlider"
+                                                Minimum="16" Maximum="60" TickFrequency="1"
+                                                IsSnapToTickEnabled="True"
+                                                ValueChanged="ExamModeFontSizeSlider_ValueChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="ExamModeFontSizeText"
+                                                   Foreground="#FFFFFFFF" FontSize="12"
+                                                   HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <TextBlock Text="调节考试全屏窗口中当前时间文字的大小"
+                                               FontSize="11" Foreground="#66CCCCDD"
+                                               Margin="70,0,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 考试列表编辑卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="考试列表" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Button Content="＋ 添加考试" Click="AddExam_Click"
+                                                Width="100" Background="#332D5A3D"/>
+                                        <Button Content="－ 删除考试" Click="DeleteExam_Click"
+                                                Width="90" Margin="6,0,0,0" Background="#33552222"/>
+                                    </StackPanel>
+                                    <DataGrid x:Name="ExamDataGrid"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              RowHeight="28"
+                                              MaxHeight="180"
+                                              Background="#11FFFFFF"
+                                              Foreground="#DDFFFFFF"
+                                              RowBackground="#00FFFFFF"
+                                              AlternatingRowBackground="#08FFFFFF"
+                                              BorderBrush="#22FFFFFF"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="#15FFFFFF"
+                                              SelectionMode="Single"
+                                              SelectionUnit="FullRow"
+                                              CanUserResizeRows="False"
+                                              SelectionChanged="ExamDataGrid_SelectionChanged">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="考试名称" Width="180" Binding="{Binding Name}" IsReadOnly="False"/>
+                                            <DataGridTextColumn Header="日期" Width="120" Binding="{Binding DateStr}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="科目数" Width="*" Binding="{Binding Subjects.Count}" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <TextBlock Text="选中考试后编辑其科目：" FontSize="12" Foreground="#88CCCCDD" Margin="0,10,0,4"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 科目编辑卡片（联动选中考试） -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="科目列表" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Button Content="＋ 添加科目" Click="AddExamSubject_Click"
+                                                Width="100" Background="#332D5A3D"/>
+                                        <Button Content="－ 删除科目" Click="DeleteExamSubject_Click"
+                                                Width="90" Margin="6,0,0,0" Background="#33552222"/>
+                                    </StackPanel>
+                                    <DataGrid x:Name="ExamSubjectGrid"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              RowHeight="28"
+                                              MaxHeight="180"
+                                              Background="#11FFFFFF"
+                                              Foreground="#DDFFFFFF"
+                                              RowBackground="#00FFFFFF"
+                                              AlternatingRowBackground="#08FFFFFF"
+                                              BorderBrush="#22FFFFFF"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="Horizontal"
+                                              HorizontalGridLinesBrush="#15FFFFFF"
+                                              SelectionMode="Single"
+                                              SelectionUnit="FullRow"
+                                              CanUserResizeRows="False">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="科目名称" Width="140" Binding="{Binding Name}" IsReadOnly="False"/>
+                                            <DataGridTextColumn Header="开考时间" Width="90" Binding="{Binding StartTimeStr}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="结束时间" Width="90" Binding="{Binding EndTimeStr}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="时长" Width="*" Binding="{Binding Duration}" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Content="保存考试数据" Click="SaveExams_Click" Width="110"/>
+                                        <Button Content="从 JSON 导入" Click="ImportExamJson_Click" Width="100" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="ExamStatusTb" FontSize="12" Foreground="#88CCCCDD"
+                                               Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
                 </Grid>
             </Grid>
 
@@ -1495,3 +1789,4 @@
         </Grid>
     </Grid>
 </Window>
+

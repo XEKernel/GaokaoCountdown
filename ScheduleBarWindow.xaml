@@ -1,0 +1,140 @@
+<Window x:Class="GaokaoCountdown.ScheduleBarWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="课表栏"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ResizeMode="NoResize"
+        SizeToContent="Height"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <Window.Resources>
+        <!-- 课节卡片基础样式 -->
+        <Style x:Key="PeriodCard" TargetType="Border">
+            <Setter Property="Background" Value="#CC1A1A2E"/>
+            <Setter Property="BorderBrush" Value="#44FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="Margin" Value="3,0"/>
+            <Setter Property="MinWidth" Value="90"/>
+        </Style>
+        <!-- 当前课节高亮样式 -->
+        <Style x:Key="PeriodCardActive" TargetType="Border" BasedOn="{StaticResource PeriodCard}">
+            <Setter Property="Background" Value="#CC2D5A3D"/>
+            <Setter Property="BorderBrush" Value="#FF4CAF50"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+        <!-- 下一节课样式 -->
+        <Style x:Key="PeriodCardNext" TargetType="Border" BasedOn="{StaticResource PeriodCard}">
+            <Setter Property="Background" Value="#CC2A3A5E"/>
+            <Setter Property="BorderBrush" Value="#FF5B9BD5"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- 外层容器，整体控制圆角与背景 -->
+    <Border Background="#DD0D0D1A" CornerRadius="0,0,6,6" Padding="0,2,0,2">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- ── 主信息行 ── -->
+            <Grid Grid.Row="0" Margin="6,1,6,1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 左：当前时间 + 日期 -->
+                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                    <TextBlock x:Name="CurrentTimeTb"
+                               FontSize="14" FontWeight="Bold"
+                               Foreground="#FFFFFFFF"
+                               FontFamily="Consolas"/>
+                    <TextBlock x:Name="DateTb"
+                               FontSize="9" Foreground="#AAFFFFFF"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- 中：课节滚动列表 -->
+                <ScrollViewer Grid.Column="1"
+                              HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              Background="Transparent">
+                    <StackPanel x:Name="PeriodPanel" Orientation="Horizontal"
+                                VerticalAlignment="Center" Margin="0,2"/>
+                </ScrollViewer>
+
+                <!-- 右：状态信息面板 -->
+                <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="8,0,0,0"
+                            MinWidth="110">
+                    <!-- 当前/空闲状态 -->
+                    <TextBlock x:Name="StatusTb"
+                               FontSize="9" Foreground="#AAFFFFFF"
+                               HorizontalAlignment="Right"/>
+                    <!-- 倒计时到下节课 -->
+                    <TextBlock x:Name="NextCountdownTb"
+                               FontSize="10" FontWeight="Bold"
+                               Foreground="#FFFF8844"
+                               HorizontalAlignment="Right"/>
+                    <!-- 60秒倒计时（下课前1分钟） -->
+                    <Border x:Name="Countdown60Panel" Visibility="Collapsed"
+                            Background="#881A0000" CornerRadius="3" Padding="4,1" Margin="0,1,0,0">
+                        <TextBlock x:Name="Countdown60Tb"
+                                   FontSize="11" FontWeight="Bold"
+                                   Foreground="#FFFF4444"
+                                   HorizontalAlignment="Center"/>
+                    </Border>
+                </StackPanel>
+
+                <!-- 最右：天气 -->
+                <StackPanel Grid.Column="3" x:Name="WeatherRow" Visibility="Collapsed"
+                            VerticalAlignment="Center" Margin="10,0,4,0">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock x:Name="WeatherIconTb" FontSize="12"
+                                   VerticalAlignment="Center" Margin="0,0,3,0"/>
+                        <TextBlock x:Name="WeatherTempTb" FontSize="11" FontWeight="Bold"
+                                   Foreground="#FF88CCFF" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="WeatherCityTb" FontSize="9"
+                               Foreground="#88FFFFFF" Margin="0,1,0,0"/>
+                    <TextBlock x:Name="WeatherTb" FontSize="9"
+                               Foreground="#88FFFFFF"/>
+                    <TextBlock x:Name="WeatherWindTb" FontSize="8"
+                               Foreground="#66FFFFFF" Visibility="Collapsed"/>
+                    <TextBlock x:Name="WeatherHumidityTb" FontSize="8"
+                               Foreground="#66FFFFFF" Visibility="Collapsed"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- ── 当前课进度条行 ── -->
+            <Grid Grid.Row="1" Margin="6,0,6,2" x:Name="ProgressRow" Visibility="Collapsed">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="ProgressLabelTb" Grid.Column="0"
+                           FontSize="9" Foreground="#88FFFFFF"
+                           VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ProgressBar x:Name="CurrentClassProgress" Grid.Column="1"
+                             Height="4" VerticalAlignment="Center"
+                             Background="#33FFFFFF"
+                             Foreground="#FF4CAF50"
+                             Minimum="0" Maximum="100"/>
+                <TextBlock x:Name="ProgressPctTb" Grid.Column="2"
+                           FontSize="9" Foreground="#88FFFFFF"
+                           VerticalAlignment="Center" Margin="4,0,0,0"/>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

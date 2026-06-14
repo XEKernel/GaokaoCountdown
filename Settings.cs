@@ -100,17 +100,10 @@ namespace GaokaoCountdown
         public string QuoteTextFieldName         { get; set; } = "text";  // API 返回 JSON 中携带文本的字段名
 
         // ── 天气 ──────────────────────────────────────────
-        public bool   ShowWeather            { get; set; } = false;
         public string WeatherCity            { get; set; } = "北京";
         public string WeatherAdcode          { get; set; } = "";
-        public int    WeatherWindowMode      { get; set; } = 0;   // 0=文字模式, 1=窗口模式
-        // 0=自定义, 1=右上角, 2=右下角, 3=左上角, 4=左下角, 5=顶部居中
-        public int    WeatherWindowPreset    { get; set; } = 1;
-        public double WeatherCustomX         { get; set; } = -1;
-        public double WeatherCustomY         { get; set; } = -1;
         public int    WeatherRefreshInterval { get; set; } = 0;   // 分钟，0=不自动刷新
         public double WeatherFontSize        { get; set; } = 14;   // 文本字号
-        public bool   WeatherAlwaysOnTop     { get; set; } = false;
         // 天气文字颜色
         public string WeatherCityColor        { get; set; } = "#FFFFFFFF";  // 城市名
         public string WeatherInfoColor        { get; set; } = "#FFCCCCDD";  // 天气描述+风+湿度
@@ -123,6 +116,34 @@ namespace GaokaoCountdown
         public bool AutoStart { get; set; } = false;
         // 其他窗口最大化时自动隐藏倒计时
         public bool HideWhenMaximized { get; set; } = false;
+
+        // ── 课表栏 ────────────────────────────────────────────
+        public bool   ShowScheduleBar          { get; set; } = false;
+        public double ScheduleBarOpacity       { get; set; } = 0.92;
+        public bool   ScheduleBarAlwaysOnTop   { get; set; } = true;
+        public bool   ScheduleBarClickThrough  { get; set; } = false;
+        /// <summary>0 = 全屏宽度</summary>
+        public double ScheduleBarWidth         { get; set; } = 0;
+        /// <summary>课表栏基础字体大小（默认 14）</summary>
+        public double ScheduleBarFontSize      { get; set; } = 14;
+
+        // ── 提醒开关 ──────────────────────────────────────────
+        public bool EnableReminderSound  { get; set; } = true;
+        public string ReminderSoundPath  { get; set; } = string.Empty;  // 空=系统提示音
+        public bool RemindClassStart     { get; set; } = true;
+        public bool RemindClassMid       { get; set; } = false;
+        public bool RemindClassEndSoon   { get; set; } = true;
+        public bool RemindClassEnd       { get; set; } = true;
+        public bool RemindNextClassSoon  { get; set; } = true;
+        public bool RemindDayEnd         { get; set; } = true;
+        public bool RemindSpecialPeriod  { get; set; } = true;
+
+        // ── 考试模式 ──────────────────────────────────────────
+        public bool EnableExamMode       { get; set; } = false;
+        /// <summary>当天有考试时自动进入考试模式</summary>
+        public bool AutoEnterExamMode    { get; set; } = false;
+        /// <summary>考试模式当前时间字体大小（默认 32）</summary>
+        public double ExamModeFontSize    { get; set; } = 32;
 
         // ── 持久化 ────────────────────────────────────────────
         private static readonly string SettingsPath = "settings.json";

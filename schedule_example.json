@@ -1,0 +1,146 @@
+{
+  "entries": [
+    {
+      "dayOfWeek": 1,
+      "period": 0,
+      "subject": "早自习",
+      "startTimeStr": "07:10",
+      "endTimeStr": "07:55",
+      "type": 1,
+      "remark": "周一早自习"
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 1,
+      "subject": "语文",
+      "startTimeStr": "08:00",
+      "endTimeStr": "08:45",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 2,
+      "subject": "数学",
+      "startTimeStr": "08:55",
+      "endTimeStr": "09:40",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 3,
+      "subject": "英语",
+      "startTimeStr": "10:00",
+      "endTimeStr": "10:45",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 4,
+      "subject": "物理",
+      "startTimeStr": "10:55",
+      "endTimeStr": "11:40",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 5,
+      "subject": "午自习",
+      "startTimeStr": "12:20",
+      "endTimeStr": "12:50",
+      "type": 3,
+      "remark": "午间自习"
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 6,
+      "subject": "化学",
+      "startTimeStr": "14:00",
+      "endTimeStr": "14:45",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 7,
+      "subject": "生物",
+      "startTimeStr": "14:55",
+      "endTimeStr": "15:40",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 8,
+      "subject": "历史",
+      "startTimeStr": "16:00",
+      "endTimeStr": "16:45",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 9,
+      "subject": "政治",
+      "startTimeStr": "16:55",
+      "endTimeStr": "17:40",
+      "type": 0,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 10,
+      "subject": "晚读",
+      "startTimeStr": "18:30",
+      "endTimeStr": "19:00",
+      "type": 4,
+      "remark": ""
+    },
+    {
+      "dayOfWeek": 1,
+      "period": 11,
+      "subject": "晚自习",
+      "startTimeStr": "19:10",
+      "endTimeStr": "21:00",
+      "type": 2,
+      "remark": ""
+    }
+  ],
+  "exams": [
+    {
+      "name": "2026学年期末考试",
+      "dateStr": "2026-07-01",
+      "subjects": [
+        {
+          "name": "语文",
+          "startTimeStr": "09:00",
+          "endTimeStr": "11:30"
+        },
+        {
+          "name": "数学",
+          "startTimeStr": "14:30",
+          "endTimeStr": "17:00"
+        }
+      ]
+    },
+    {
+      "name": "2026学年期末考试",
+      "dateStr": "2026-07-02",
+      "subjects": [
+        {
+          "name": "英语",
+          "startTimeStr": "09:00",
+          "endTimeStr": "11:30"
+        },
+        {
+          "name": "物理",
+          "startTimeStr": "14:30",
+          "endTimeStr": "16:30"
+        }
+      ]
+    }
+  ]
+}

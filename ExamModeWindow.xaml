@@ -1,0 +1,112 @@
+<Window x:Class="GaokaoCountdown.ExamModeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="考试模式"
+        WindowStyle="None"
+        WindowState="Maximized"
+        AllowsTransparency="False"
+        Background="#FF060B14"
+        Topmost="True"
+        ShowInTaskbar="True"
+        KeyDown="Window_KeyDown"
+        Loaded="Window_Loaded"
+        Closing="Window_Closing">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ESC 提示 -->
+        <TextBlock Grid.Row="0" Text="按 ESC 退出考试模式"
+                   FontSize="14" Foreground="#44FFFFFF"
+                   HorizontalAlignment="Right" VerticalAlignment="Top"
+                   Margin="0,20,30,0"/>
+
+        <!-- 考试名称 -->
+        <TextBlock x:Name="ExamNameTb" Grid.Row="0"
+                   FontSize="28" Foreground="#AAFFFFFF"
+                   HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                   Margin="0,0,0,16"/>
+
+        <!-- 当前科目名 -->
+        <TextBlock x:Name="SubjectTb" Grid.Row="1"
+                   FontSize="64" FontWeight="Bold"
+                   Foreground="#FFFFFFFF"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,8"/>
+
+        <!-- 主倒计时 mm:ss -->
+        <TextBlock x:Name="CountdownTb" Grid.Row="2"
+                   FontSize="120" FontWeight="Bold"
+                   FontFamily="Consolas"
+                   Foreground="#FFFFFFFF"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,8"/>
+
+        <!-- 进度条区域 -->
+        <Grid Grid.Row="3" Margin="80,0,80,32">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- 科目时间信息 -->
+            <StackPanel Grid.Row="0" Orientation="Horizontal"
+                        HorizontalAlignment="Center" Margin="0,0,0,10">
+                <TextBlock x:Name="StartTimeTb" FontSize="16" Foreground="#88FFFFFF"/>
+                <TextBlock FontSize="16" Foreground="#44FFFFFF" Margin="12,0"> — </TextBlock>
+                <TextBlock x:Name="EndTimeTb" FontSize="16" Foreground="#88FFFFFF"/>
+                <TextBlock x:Name="DurationTb" FontSize="16" Foreground="#66FFFFFF" Margin="16,0,0,0"/>
+            </StackPanel>
+
+            <!-- 进度条 -->
+            <ProgressBar x:Name="ExamProgress" Grid.Row="1"
+                         Height="12"
+                         Background="#22FFFFFF"
+                         Foreground="#FF5B9BD5"
+                         Minimum="0" Maximum="100"/>
+
+            <!-- 进度百分比 -->
+            <TextBlock x:Name="ProgressPctTb" Grid.Row="2"
+                       FontSize="13" Foreground="#66FFFFFF"
+                       HorizontalAlignment="Right" Margin="0,4,0,0"/>
+        </Grid>
+
+        <!-- 下一场 + 当前时间 -->
+        <StackPanel Grid.Row="4" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,0,0,0">
+            <TextBlock x:Name="NextSubjectTb"
+                       FontSize="22" Foreground="#88FFFFFF"
+                       HorizontalAlignment="Center"/>
+            <TextBlock x:Name="CurrentTimeTb"
+                       FontSize="32" FontFamily="Consolas"
+                       Foreground="#66FFFFFF"
+                       HorizontalAlignment="Center"
+                       Margin="0,12,0,0"/>
+            <!-- 天气信息行 -->
+            <StackPanel x:Name="WeatherRow2" Visibility="Collapsed"
+                        Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,6,0,0">
+                <TextBlock x:Name="W2IconTb" FontSize="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <TextBlock x:Name="W2CityTb" FontSize="12" Foreground="#88FFFFFF"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock x:Name="W2WeatherTb" FontSize="12" Foreground="#88FFFFFF"
+                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                <TextBlock x:Name="W2TempTb" FontSize="13" FontWeight="Bold"
+                           Foreground="#FF88CCFF" VerticalAlignment="Center"/>
+            </StackPanel>
+            <!-- 时间提醒 -->
+            <TextBlock x:Name="WarningTb"
+                       Text="距离结束还有 15 分钟，请注意检查答卷"
+                       FontSize="20" FontWeight="Bold"
+                       Foreground="#FFCC8800"
+                       HorizontalAlignment="Center"
+                       Visibility="Collapsed"
+                       Margin="0,16,0,0"/>
+        </StackPanel>
+    </Grid>
+</Window>

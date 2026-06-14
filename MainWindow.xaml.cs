@@ -78,6 +78,7 @@ namespace GaokaoCountdown
 
         // ── 最大化检测：记录上次隐藏状态，避免重复操作 ──
         private bool _hiddenByMaximize = false;
+        private bool _hiddenByScheduleOrExam = false; // 因上课/考试而隐藏
         private DispatcherTimer? _maximizeCheckTimer;
         private bool _isPositioning = false;   // 程序化定位中，抑制 LocationChanged 回写
         private bool _clickThroughEnabled = false;  // 当前点击穿透状态
@@ -93,8 +94,11 @@ namespace GaokaoCountdown
         };
         private DispatcherTimer? _quoteRefreshTimer;
 
-        // ── 天气窗口 ─────────────────────────────────────────
-        private WeatherWindow? _weatherWindow;
+        // ── 课表 & 提醒 & 考试模式 ───────────────────────────
+        private ScheduleManager?   _scheduleManager;
+        private ReminderService?   _reminderService;
+        private ScheduleBarWindow? _scheduleBarWindow;
+        private ExamModeWindow?    _examModeWindow;
 
         // ── 设置代理属性 ─────────────────────────────────────
         public string ChinesePrefix      { get => settings.ChinesePrefix;      set => settings.ChinesePrefix      = value; }
@@ -149,16 +153,10 @@ namespace GaokaoCountdown
         public int    QuoteAutoRefreshInterval   { get => settings.QuoteAutoRefreshInterval;   set => settings.QuoteAutoRefreshInterval   = value; }
         public string QuoteTextFieldName         { get => settings.QuoteTextFieldName;         set => settings.QuoteTextFieldName         = value; }
 
-        public bool   ShowWeather            { get => settings.ShowWeather;            set => settings.ShowWeather            = value; }
         public string WeatherCity            { get => settings.WeatherCity;            set => settings.WeatherCity            = value; }
         public string WeatherAdcode          { get => settings.WeatherAdcode;          set => settings.WeatherAdcode          = value; }
-        public int    WeatherWindowMode      { get => settings.WeatherWindowMode;      set => settings.WeatherWindowMode      = value; }
-        public int    WeatherWindowPreset  { get => settings.WeatherWindowPreset;  set => settings.WeatherWindowPreset  = value; }
-        public double WeatherCustomX         { get => settings.WeatherCustomX;         set => settings.WeatherCustomX         = value; }
-        public double WeatherCustomY         { get => settings.WeatherCustomY;         set => settings.WeatherCustomY         = value; }
         public int    WeatherRefreshInterval { get => settings.WeatherRefreshInterval; set => settings.WeatherRefreshInterval = value; }
         public double WeatherFontSize        { get => settings.WeatherFontSize;        set => settings.WeatherFontSize        = value; }
-        public bool   WeatherAlwaysOnTop     { get => settings.WeatherAlwaysOnTop;     set => settings.WeatherAlwaysOnTop     = value; }
         public string WeatherCityColor        { get => settings.WeatherCityColor;        set => settings.WeatherCityColor        = value; }
         public string WeatherInfoColor        { get => settings.WeatherInfoColor;        set => settings.WeatherInfoColor        = value; }
         public string WeatherTempColor        { get => settings.WeatherTempColor;        set => settings.WeatherTempColor        = value; }
@@ -174,6 +172,29 @@ namespace GaokaoCountdown
             }
         }
         public bool   HideWhenMaximized { get => settings.HideWhenMaximized; set => settings.HideWhenMaximized = value; }
+
+        // ── 课表栏 & 提醒 & 考试模式代理属性 ─────────────────
+        public bool   ShowScheduleBar         { get => settings.ShowScheduleBar;         set => settings.ShowScheduleBar         = value; }
+        public double ScheduleBarOpacity      { get => settings.ScheduleBarOpacity;      set => settings.ScheduleBarOpacity      = value; }
+        public bool   ScheduleBarAlwaysOnTop  { get => settings.ScheduleBarAlwaysOnTop;  set => settings.ScheduleBarAlwaysOnTop  = value; }
+        public bool   ScheduleBarClickThrough { get => settings.ScheduleBarClickThrough; set => settings.ScheduleBarClickThrough = value; }
+        public double ScheduleBarWidth        { get => settings.ScheduleBarWidth;        set => settings.ScheduleBarWidth        = value; }
+        public double ScheduleBarFontSize     { get => settings.ScheduleBarFontSize;     set => settings.ScheduleBarFontSize     = value; }
+        public bool   EnableReminderSound     { get => settings.EnableReminderSound;     set => settings.EnableReminderSound     = value; }
+        public string ReminderSoundPath       { get => settings.ReminderSoundPath;       set => settings.ReminderSoundPath       = value; }
+        public bool   RemindClassStart        { get => settings.RemindClassStart;        set => settings.RemindClassStart        = value; }
+        public bool   RemindClassMid          { get => settings.RemindClassMid;          set => settings.RemindClassMid          = value; }
+        public bool   RemindClassEndSoon      { get => settings.RemindClassEndSoon;      set => settings.RemindClassEndSoon      = value; }
+        public bool   RemindClassEnd          { get => settings.RemindClassEnd;          set => settings.RemindClassEnd          = value; }
+        public bool   RemindNextClassSoon     { get => settings.RemindNextClassSoon;     set => settings.RemindNextClassSoon     = value; }
+        public bool   RemindDayEnd            { get => settings.RemindDayEnd;            set => settings.RemindDayEnd            = value; }
+        public bool   RemindSpecialPeriod     { get => settings.RemindSpecialPeriod;     set => settings.RemindSpecialPeriod     = value; }
+        public bool   EnableExamMode          { get => settings.EnableExamMode;          set => settings.EnableExamMode          = value; }
+        public bool   AutoEnterExamMode       { get => settings.AutoEnterExamMode;       set => settings.AutoEnterExamMode       = value; }
+        public double ExamModeFontSize        { get => settings.ExamModeFontSize;        set => settings.ExamModeFontSize        = value; }
+
+        /// <summary>供设置窗口访问课表管理器</summary>
+        public ScheduleManager? GetScheduleManager() => _scheduleManager;
 
         // ── 注册表自启动键名 ─────────────────────────────────
         private const string AutoStartKeyName = "GaokaoCountdown";
@@ -235,6 +256,7 @@ namespace GaokaoCountdown
 
             InitializeComponent();
             SetupTrayIcon();
+            SetupScheduleServices();
             SetupTimer();
             UpdateCountdown();
             PositionWindow();
@@ -242,6 +264,104 @@ namespace GaokaoCountdown
 
             // 拖动窗口时实时同步坐标到 settings
             LocationChanged += Window_LocationChanged;
+        }
+
+        // ── 课表服务初始化 ─────────────────────────────────────
+        private void SetupScheduleServices()
+        {
+            _scheduleManager = new ScheduleManager();
+            _reminderService = new ReminderService(_scheduleManager, settings);
+
+            // 订阅提醒事件
+            _reminderService.Reminder += OnReminder;
+
+            if (settings.EnableExamMode || settings.RemindClassStart || settings.ShowScheduleBar)
+                _reminderService.Start();
+
+            // 初始化课表栏
+            if (settings.ShowScheduleBar)
+                ShowScheduleBarWindow();
+
+            // 当天有考试且开启自动进入时，延迟 2 秒进入
+            if (settings.AutoEnterExamMode && settings.EnableExamMode)
+            {
+                var todayExams = _scheduleManager.GetTodayExams();
+                if (todayExams.Count > 0)
+                {
+                    var delay = new DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
+                    delay.Tick += (s, e) => { delay.Stop(); EnterExamMode(); };
+                    delay.Start();
+                }
+            }
+        }
+
+        private void OnReminder(object? sender, ReminderEventArgs e)
+        {
+            // 在主 UI 线程触发（ReminderService 已通过 DispatcherTimer 在 UI 线程运行）
+            ShowTrayNotification(e.Title, e.Message);
+        }
+
+        // ── 托盘通知（供 ReminderService 调用）─────────────────
+        public void ShowTrayNotification(string title, string message)
+        {
+            notifyIcon?.ShowBalloonTip(title, message,
+                Hardcodet.Wpf.TaskbarNotification.BalloonIcon.Info);
+        }
+
+        // ── 课表栏窗口管理 ────────────────────────────────────
+        private void ShowScheduleBarWindow()
+        {
+            if (_scheduleBarWindow != null) return;
+            if (_scheduleManager == null || _reminderService == null) return;
+            _scheduleBarWindow = new ScheduleBarWindow(settings, _scheduleManager, _reminderService);
+            _scheduleBarWindow.Show();
+        }
+
+        private void HideScheduleBarWindow()
+        {
+            _scheduleBarWindow?.Close();
+            _scheduleBarWindow = null;
+        }
+
+        /// <summary>设置窗口应用设置后调用，刷新课表栏状态</summary>
+        public void ApplyScheduleBarSettings()
+        {
+            // 重启提醒服务（开关可能变化）
+            _reminderService?.Stop();
+            if (settings.EnableExamMode || settings.RemindClassStart ||
+                settings.ShowScheduleBar || settings.RemindClassEnd)
+                _reminderService?.Start();
+
+            if (settings.ShowScheduleBar)
+            {
+                if (_scheduleBarWindow == null)
+                    ShowScheduleBarWindow();
+                else
+                {
+                    _scheduleBarWindow.ApplySettings();
+                    _scheduleBarWindow.ApplyFontSizes();
+                }
+            }
+            else
+            {
+                HideScheduleBarWindow();
+            }
+        }
+
+        // ── 考试模式 ──────────────────────────────────────────
+        public void EnterExamMode()
+        {
+            if (_examModeWindow != null) { _examModeWindow.Activate(); return; }
+            if (_scheduleManager == null) return;
+            _examModeWindow = new ExamModeWindow(_scheduleManager, settings);
+            _examModeWindow.Closed += (s, e) => _examModeWindow = null;
+            _examModeWindow.Show();
+        }
+
+        public void ExitExamMode()
+        {
+            _examModeWindow?.Close();
+            _examModeWindow = null;
         }
 
         public void RefreshDateFields()
@@ -274,14 +394,21 @@ namespace GaokaoCountdown
             var contextMenu = new ContextMenu();
             var showHideItem = new MenuItem { Header = "显示 / 隐藏" };
             showHideItem.Click += (s, e) => ToggleVisibility();
-            var weatherItem = new MenuItem { Header = "天气" };
-            weatherItem.Click += (s, e) => ToggleWeatherWindow();
+            var scheduleBarItem = new MenuItem { Header = "课表栏" };
+            scheduleBarItem.Click += (s, e) =>
+            {
+                if (_scheduleBarWindow != null) HideScheduleBarWindow();
+                else ShowScheduleBarWindow();
+            };
+            var examModeItem = new MenuItem { Header = "考试模式" };
+            examModeItem.Click += (s, e) => EnterExamMode();
             var settingsItem = new MenuItem { Header = "设置" };
             settingsItem.Click += (s, e) => OpenSettings();
             var exitItem = new MenuItem { Header = "退出" };
             exitItem.Click += (s, e) => ExitApplication();
             contextMenu.Items.Add(showHideItem);
-            contextMenu.Items.Add(weatherItem);
+            contextMenu.Items.Add(scheduleBarItem);
+            contextMenu.Items.Add(examModeItem);
             contextMenu.Items.Add(settingsItem);
             contextMenu.Items.Add(new Separator());
             contextMenu.Items.Add(exitItem);
@@ -347,6 +474,9 @@ namespace GaokaoCountdown
 
         private void ExitApplication()
         {
+            _reminderService?.Dispose();
+            HideScheduleBarWindow();
+            ExitExamMode();
             notifyIcon?.Dispose();
             Application.Current.Shutdown();
         }
@@ -436,6 +566,29 @@ namespace GaokaoCountdown
         // ══════════════════════════════════════════════════════
         private void UpdateCountdown()
         {
+            // ── 上课 / 考试期间：隐藏高考倒计时窗口，跳过 UI 更新 ──
+            bool isInClass   = _scheduleManager?.GetCurrentEntry(DateTime.Now) != null;
+            bool isInExam    = _examModeWindow != null;
+            bool shouldHide  = isInClass || isInExam;
+
+            if (shouldHide)
+            {
+                if (Visibility == Visibility.Visible)
+                {
+                    _hiddenByScheduleOrExam = true;
+                    Hide();
+                }
+                return; // 不更新 UI，不请求 API
+            }
+            else if (_hiddenByScheduleOrExam)
+            {
+                _hiddenByScheduleOrExam = false;
+                Show();
+            }
+
+            // 如果是被最大化窗口压下去的，也不做 UI 更新
+            if (_hiddenByMaximize) return;
+
             DateTime now = DateTime.Now;
             TimeSpan timeLeft = gaokaoDate - now;
 
@@ -768,9 +921,6 @@ namespace GaokaoCountdown
                 _ = LoadDailyQuoteAsync();
                 StartQuoteRefreshTimer();
             }
-            // 天气窗口
-            if (ShowWeather)
-                ShowWeatherWindow();
         }
 
         /// <summary>自定义模式下拖动窗口；预设模式下点击穿透，不响应拖动</summary>
@@ -896,6 +1046,8 @@ namespace GaokaoCountdown
         /// <summary>调用 API 加载一言，并应用当前样式设置、淡入动画</summary>
         private async Task LoadDailyQuoteAsync()
         {
+            // 窗口隐藏时（上课/考试中）不请求 API
+            if (Visibility != Visibility.Visible || !ShowDailyQuote) return;
             try
             {
                 string url = string.IsNullOrWhiteSpace(QuoteApiUrl)
@@ -962,6 +1114,8 @@ namespace GaokaoCountdown
             };
             _quoteRefreshTimer.Tick += async (_, _) =>
             {
+                // 窗口隐藏时不刷新
+                if (Visibility != Visibility.Visible) return;
                 // 淡出 → 重新加载 → 淡入
                 var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromSeconds(0.4))
                 {
@@ -982,62 +1136,6 @@ namespace GaokaoCountdown
             };
             fadeOut.Completed += async (_, _) => await LoadDailyQuoteAsync();
             DailyQuoteTb.BeginAnimation(UIElement.OpacityProperty, fadeOut);
-        }
-
-        // ══════════════════════════════════════════════════════
-        //  天气窗口管理
-        // ══════════════════════════════════════════════════════
-
-        /// <summary>显示天气窗口（或刷新已有窗口）</summary>
-        public void ShowWeatherWindow()
-        {
-            if (_weatherWindow == null)
-            {
-                _weatherWindow = new WeatherWindow(settings);
-                _weatherWindow.Closed += (_, _) => _weatherWindow = null;
-                _weatherWindow.Closing += (_, _) => _weatherWindow = null;
-                _weatherWindow.ApplyMode();
-                _weatherWindow.Show();
-                _ = _weatherWindow.LoadWeatherAsync();
-                _weatherWindow.StartRefreshTimer();
-            }
-            else
-            {
-                _weatherWindow.ApplyMode();
-                // SizeToContent 异步重排，延迟定位
-                _weatherWindow.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    _weatherWindow.PositionWindow();
-                }), DispatcherPriority.Loaded);
-                _weatherWindow.StartRefreshTimer();
-            }
-        }
-
-        /// <summary>关闭天气窗口</summary>
-        public void CloseWeatherWindow()
-        {
-            _weatherWindow?.Close();
-            _weatherWindow = null;
-        }
-
-        /// <summary>切换天气窗口显示/隐藏</summary>
-        public void ToggleWeatherWindow()
-        {
-            if (_weatherWindow != null && _weatherWindow.IsLoaded)
-            {
-                CloseWeatherWindow();
-            }
-            else
-            {
-                ShowWeatherWindow();
-            }
-        }
-
-        /// <summary>从 SettingWindow 调用的公开刷新方法</summary>
-        public async Task RefreshWeatherAsync()
-        {
-            if (_weatherWindow != null && _weatherWindow.IsLoaded)
-                await _weatherWindow.LoadWeatherAsync();
         }
     }
 }

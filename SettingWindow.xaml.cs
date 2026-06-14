@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -56,6 +58,8 @@ namespace GaokaoCountdown
                         ContentDate,
                         ContentAnimation,
                         ContentApi,
+                        ContentSchedule,
+                        ContentExam,
                         ContentAbout
                     };
 
@@ -385,35 +389,48 @@ namespace GaokaoCountdown
             QuoteRefreshIntervalText.Text      = _mainWindow.QuoteAutoRefreshInterval == 0
                 ? "关" : $"{_mainWindow.QuoteAutoRefreshInterval}s";
 
-            // ── 天气 ──────────────────────────────────────────
-            ShowWeatherCheck.IsChecked          = _mainWindow.ShowWeather;
-            WeatherCityBox.Text                 = _mainWindow.WeatherCity;
-            WeatherAdcodeBox.Text               = _mainWindow.WeatherAdcode;
-            if (_mainWindow.WeatherWindowMode == 1)
-                WeatherModeWindow.IsChecked = true;
-            else
-                WeatherModeText.IsChecked   = true;
+            // ── 课表栏 ────────────────────────────────────────
+            ShowScheduleBarCheck.IsChecked         = _mainWindow.ShowScheduleBar;
+            ScheduleBarAlwaysOnTopCheck.IsChecked  = _mainWindow.ScheduleBarAlwaysOnTop;
+            ScheduleBarClickThroughCheck.IsChecked = _mainWindow.ScheduleBarClickThrough;
+            ScheduleBarOpacitySlider.Value         = _mainWindow.ScheduleBarOpacity;
+            ScheduleBarOpacityLabel.Text           = $"{_mainWindow.ScheduleBarOpacity * 100:F0}%";
+            ScheduleBarWidthBox.Text               = _mainWindow.ScheduleBarWidth.ToString("F0");
+            ScheduleBarFontSizeSlider.Value      = _mainWindow.ScheduleBarFontSize;
+            ScheduleBarFontSizeText.Text         = _mainWindow.ScheduleBarFontSize.ToString("F0");
+            EnableReminderSoundCheck.IsChecked     = _mainWindow.EnableReminderSound;
+            ReminderSoundPathBox.Text              = _mainWindow.ReminderSoundPath;
+            RemindClassStartCheck.IsChecked        = _mainWindow.RemindClassStart;
+            RemindClassMidCheck.IsChecked          = _mainWindow.RemindClassMid;
+            RemindClassEndSoonCheck.IsChecked      = _mainWindow.RemindClassEndSoon;
+            RemindClassEndCheck.IsChecked          = _mainWindow.RemindClassEnd;
+            RemindNextClassSoonCheck.IsChecked     = _mainWindow.RemindNextClassSoon;
+            RemindDayEndCheck.IsChecked            = _mainWindow.RemindDayEnd;
+            RemindSpecialPeriodCheck.IsChecked     = _mainWindow.RemindSpecialPeriod;
 
-            // 天气窗口位置预设
-            switch (_mainWindow.WeatherWindowPreset)
+            // ── 考试模式 ──────────────────────────────────────
+            EnableExamModeCheck.IsChecked   = _mainWindow.EnableExamMode;
+            AutoEnterExamModeCheck.IsChecked = _mainWindow.AutoEnterExamMode;
+            ExamModeFontSizeSlider.Value     = _mainWindow.ExamModeFontSize;
+            ExamModeFontSizeText.Text        = _mainWindow.ExamModeFontSize.ToString("F0");
+
+            // 填充课表 DataGrid
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm != null)
             {
-                case 0: WeatherPosCustom.IsChecked      = true; break;
-                case 1: WeatherPosTopRight.IsChecked    = true; break;
-                case 2: WeatherPosBottomRight.IsChecked = true; break;
-                case 3: WeatherPosTopLeft.IsChecked     = true; break;
-                case 4: WeatherPosBottomLeft.IsChecked  = true; break;
-                case 5: WeatherPosTopCenter.IsChecked   = true; break;
-                default: WeatherPosTopRight.IsChecked   = true; break;
+                PopulateScheduleComboColumns();
+                RefreshScheduleGrid();
+                RefreshExamGrid();
             }
 
-            WeatherXBox.Text                    = _mainWindow.WeatherCustomX.ToString("F0");
-            WeatherYBox.Text                    = _mainWindow.WeatherCustomY.ToString("F0");
+            // ── 天气 ──────────────────────────────────────────
+            WeatherCityBox.Text                 = _mainWindow.WeatherCity;
+            WeatherAdcodeBox.Text               = _mainWindow.WeatherAdcode;
             WeatherFontSizeSlider.Value         = _mainWindow.WeatherFontSize;
             WeatherFontSizeText.Text            = _mainWindow.WeatherFontSize.ToString("F0");
             WeatherRefreshIntervalSlider.Value  = _mainWindow.WeatherRefreshInterval;
             WeatherRefreshIntervalText.Text     = _mainWindow.WeatherRefreshInterval == 0
                 ? "关" : $"{_mainWindow.WeatherRefreshInterval}min";
-            WeatherAlwaysOnTopCheck.IsChecked   = _mainWindow.WeatherAlwaysOnTop;
 
             // 天气文字颜色
             WeatherCityColorBox.Text      = _mainWindow.WeatherCityColor;
@@ -529,25 +546,13 @@ namespace GaokaoCountdown
                 _ = _mainWindow.RefreshQuoteAsync();
 
             // ── 天气 ──────────────────────────────────────────
-            _mainWindow.ShowWeather          = ShowWeatherCheck.IsChecked == true;
             _mainWindow.WeatherCity          = WeatherCityBox.Text.Trim();
             _mainWindow.WeatherAdcode        = WeatherAdcodeBox.Text.Trim();
-            _mainWindow.WeatherWindowMode    = WeatherModeWindow.IsChecked == true ? 1 : 0;
 
-            _mainWindow.WeatherWindowPreset =
-                WeatherPosCustom.IsChecked == true      ? 0 :
-                WeatherPosTopRight.IsChecked == true    ? 1 :
-                WeatherPosBottomRight.IsChecked == true ? 2 :
-                WeatherPosTopLeft.IsChecked == true     ? 3 :
-                WeatherPosBottomLeft.IsChecked == true  ? 4 :
-                WeatherPosTopCenter.IsChecked == true   ? 5 : 1;
 
-            if (double.TryParse(WeatherXBox.Text, out double wx))     _mainWindow.WeatherCustomX      = wx;
-            if (double.TryParse(WeatherYBox.Text, out double wy))     _mainWindow.WeatherCustomY      = wy;
             _mainWindow.WeatherFontSize     = WeatherFontSizeSlider.Value;
 
             _mainWindow.WeatherRefreshInterval = (int)WeatherRefreshIntervalSlider.Value;
-            _mainWindow.WeatherAlwaysOnTop     = WeatherAlwaysOnTopCheck.IsChecked == true;
 
             // 天气文字颜色
             if (!TryParseColor(WeatherCityColorBox.Text, out Color wcc))
@@ -586,11 +591,6 @@ namespace GaokaoCountdown
             _mainWindow.WeatherTimeColor  = WeatherTimeColorBox.Text.Trim();
             _mainWindow.WeatherIconColor  = WeatherIconColorBox.Text.Trim();
 
-            // 刷新天气窗口状态
-            if (_mainWindow.ShowWeather)
-                _mainWindow.ShowWeatherWindow();
-            else
-                _mainWindow.CloseWeatherWindow();
 
             // ── 日期 ──────────────────────────────────────────
             if (!DateTime.TryParse(GaokaoDateBox.Text, out _))
@@ -614,6 +614,31 @@ namespace GaokaoCountdown
 
             // ── 刷新主窗口显示 ────────────────────────────────
             _mainWindow.UpdateCountdownDisplay();
+
+            // ── 课表栏设置 ────────────────────────────────────
+            _mainWindow.ShowScheduleBar         = ShowScheduleBarCheck.IsChecked == true;
+            _mainWindow.ScheduleBarAlwaysOnTop  = ScheduleBarAlwaysOnTopCheck.IsChecked == true;
+            _mainWindow.ScheduleBarClickThrough = ScheduleBarClickThroughCheck.IsChecked == true;
+            _mainWindow.ScheduleBarOpacity      = ScheduleBarOpacitySlider.Value;
+            if (double.TryParse(ScheduleBarWidthBox.Text, out double sbw)) _mainWindow.ScheduleBarWidth = sbw;
+            _mainWindow.ScheduleBarFontSize     = ScheduleBarFontSizeSlider.Value;
+            _mainWindow.EnableReminderSound     = EnableReminderSoundCheck.IsChecked == true;
+            _mainWindow.ReminderSoundPath       = ReminderSoundPathBox.Text.Trim();
+            _mainWindow.RemindClassStart        = RemindClassStartCheck.IsChecked == true;
+            _mainWindow.RemindClassMid          = RemindClassMidCheck.IsChecked == true;
+            _mainWindow.RemindClassEndSoon      = RemindClassEndSoonCheck.IsChecked == true;
+            _mainWindow.RemindClassEnd          = RemindClassEndCheck.IsChecked == true;
+            _mainWindow.RemindNextClassSoon     = RemindNextClassSoonCheck.IsChecked == true;
+            _mainWindow.RemindDayEnd            = RemindDayEndCheck.IsChecked == true;
+            _mainWindow.RemindSpecialPeriod     = RemindSpecialPeriodCheck.IsChecked == true;
+
+            // ── 考试模式 ──────────────────────────────────────
+            _mainWindow.EnableExamMode    = EnableExamModeCheck.IsChecked == true;
+            _mainWindow.AutoEnterExamMode = AutoEnterExamModeCheck.IsChecked == true;
+            _mainWindow.ExamModeFontSize  = ExamModeFontSizeSlider.Value;
+
+            // 通知主窗口刷新课表栏
+            _mainWindow.ApplyScheduleBarSettings();
 
             // ── 保存 ──────────────────────────────────────────
             _mainWindow.SaveSettings();
@@ -702,28 +727,21 @@ namespace GaokaoCountdown
             _mainWindow.QuoteApiUrl               = defaults.QuoteApiUrl;
             _mainWindow.QuoteTextFieldName        = defaults.QuoteTextFieldName;
             _mainWindow.QuoteAutoRefreshInterval   = defaults.QuoteAutoRefreshInterval;
-            _mainWindow.ShowWeather              = defaults.ShowWeather;
             _mainWindow.WeatherCity              = defaults.WeatherCity;
             _mainWindow.WeatherAdcode            = defaults.WeatherAdcode;
-            _mainWindow.WeatherWindowMode        = defaults.WeatherWindowMode;
-            _mainWindow.WeatherWindowPreset      = defaults.WeatherWindowPreset;
-            _mainWindow.WeatherCustomX           = defaults.WeatherCustomX;
-            _mainWindow.WeatherCustomY           = defaults.WeatherCustomY;
             _mainWindow.WeatherFontSize          = defaults.WeatherFontSize;
             _mainWindow.WeatherRefreshInterval   = defaults.WeatherRefreshInterval;
-            _mainWindow.WeatherAlwaysOnTop       = defaults.WeatherAlwaysOnTop;
             _mainWindow.WeatherCityColor        = defaults.WeatherCityColor;
             _mainWindow.WeatherInfoColor        = defaults.WeatherInfoColor;
             _mainWindow.WeatherTempColor        = defaults.WeatherTempColor;
             _mainWindow.WeatherTimeColor        = defaults.WeatherTimeColor;
             _mainWindow.WeatherIconColor        = defaults.WeatherIconColor;
+            _mainWindow.ScheduleBarFontSize     = defaults.ScheduleBarFontSize;
+            _mainWindow.ExamModeFontSize        = defaults.ExamModeFontSize;
             _mainWindow.RefreshDateFields();
             _mainWindow.ApplyWindowLayer();
             _mainWindow.UpdateCountdownDisplay();
             _mainWindow.SaveSettings();
-
-            // 重置天气窗口
-            _mainWindow.CloseWeatherWindow();
 
             LoadSettings();
         }
@@ -1112,30 +1130,22 @@ namespace GaokaoCountdown
             }
         }
 
-        private void WeatherMode_Changed(object sender, RoutedEventArgs e) { }
-
-        private void WeatherPosCustom_Checked(object sender, RoutedEventArgs e)
-        {
-            if (WeatherCustomPosPanel != null)
-            {
-                WeatherCustomPosPanel.IsEnabled = true;
-                WeatherCustomPosPanel.Opacity   = 1.0;
-            }
-        }
-
-        private void WeatherPosCustom_Unchecked(object sender, RoutedEventArgs e)
-        {
-            if (WeatherCustomPosPanel != null)
-            {
-                WeatherCustomPosPanel.IsEnabled = false;
-                WeatherCustomPosPanel.Opacity   = 0.5;
-            }
-        }
-
         private void WeatherFontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (WeatherFontSizeText != null)
                 WeatherFontSizeText.Text = $"{(int)WeatherFontSizeSlider.Value}";
+        }
+
+        private void ScheduleBarFontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (ScheduleBarFontSizeText != null)
+                ScheduleBarFontSizeText.Text = $"{(int)ScheduleBarFontSizeSlider.Value}";
+        }
+
+        private void ExamModeFontSizeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (ExamModeFontSizeText != null)
+                ExamModeFontSizeText.Text = $"{(int)ExamModeFontSizeSlider.Value}";
         }
 
         private void FontFamilyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
@@ -1316,6 +1326,260 @@ namespace GaokaoCountdown
                 return true;
             }
             return false;
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  课表 Tab 事件处理
+        // ══════════════════════════════════════════════════════
+
+        private void ScheduleBarOpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (ScheduleBarOpacityLabel != null)
+                ScheduleBarOpacityLabel.Text = $"{e.NewValue * 100:F0}%";
+        }
+
+        private void BrowseReminderSound_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "音频文件|*.wav;*.mp3|所有文件|*.*",
+                Title = "选择提醒声音文件"
+            };
+            if (dlg.ShowDialog() == true)
+                ReminderSoundPathBox.Text = dlg.FileName;
+        }
+
+        private void ImportScheduleJson_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "JSON 文件|*.json|所有文件|*.*",
+                Title = "导入课表 JSON"
+            };
+            if (dlg.ShowDialog() != true) return;
+            try
+            {
+                var json = System.IO.File.ReadAllText(dlg.FileName);
+                var sm = _mainWindow.GetScheduleManager();
+                if (sm == null) { ScheduleStatusTb.Text = "课表服务未初始化"; return; }
+                var (ok, msg) = sm.ImportFromJson(json);
+                ScheduleStatusTb.Text = msg;
+                if (ok)
+                {
+                    var today = sm.GetTodayEntries();
+                    ExamStatusTb.Text = $"考试记录：{sm.Data.Exams.Count} 场";
+                }
+            }
+            catch (Exception ex)
+            {
+                ScheduleStatusTb.Text = $"读取文件失败：{ex.Message}";
+            }
+        }
+
+        private void ExportScheduleJson_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new Microsoft.Win32.SaveFileDialog
+            {
+                Filter = "JSON 文件|*.json",
+                FileName = "schedule.json",
+                Title = "导出课表 JSON"
+            };
+            if (dlg.ShowDialog() != true) return;
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm == null) return;
+            var opts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+            var json = System.Text.Json.JsonSerializer.Serialize(sm.Data, opts);
+            System.IO.File.WriteAllText(dlg.FileName, json);
+            ScheduleStatusTb.Text = $"已导出到 {dlg.FileName}";
+        }
+
+        private void OpenScheduleJson_Click(object sender, RoutedEventArgs e)
+        {
+            var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schedule.json");
+            if (!System.IO.File.Exists(path))
+            {
+                // 创建默认空课表
+                var empty = new ScheduleData();
+                empty.Save();
+            }
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            });
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  考试模式 Tab 事件处理
+        // ══════════════════════════════════════════════════════
+
+        private void ImportExamJson_Click(object sender, RoutedEventArgs e)
+        {
+            // 复用 ImportScheduleJson（考试数据在同一 schedule.json 中）
+            ImportScheduleJson_Click(sender, e);
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm != null)
+                ExamStatusTb.Text = $"已加载 {sm.Data.Exams.Count} 场考试";
+        }
+
+        private void EnterExamMode_Click(object sender, RoutedEventArgs e)
+        {
+            _mainWindow.EnterExamMode();
+        }
+
+        private void ExitExamMode_Click(object sender, RoutedEventArgs e)
+        {
+            _mainWindow.ExitExamMode();
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  课表 DataGrid 直编辑
+        // ══════════════════════════════════════════════════════
+
+        private static readonly Dictionary<string, int> _weekdays = new()
+        {
+            { "周一", 1 }, { "周二", 2 }, { "周三", 3 }, { "周四", 4 },
+            { "周五", 5 }, { "周六", 6 }, { "周日", 7 }
+        };
+
+        private static readonly Dictionary<string, PeriodType> _periodTypes = new()
+        {
+            { "普通课", PeriodType.Normal },
+            { "早自习", PeriodType.Morning },
+            { "晚自习", PeriodType.Evening },
+            { "晚读",   PeriodType.Reading },
+            { "午休",   PeriodType.Noon },
+        };
+
+        /// <summary>填充 DataGrid 的 ComboBox 列选项</summary>
+        private void PopulateScheduleComboColumns()
+        {
+            // 星期列
+            var dayCol = ScheduleDataGrid.Columns[0] as DataGridComboBoxColumn;
+            if (dayCol != null)
+                dayCol.ItemsSource = _weekdays.ToList();
+
+            // 类型列（索引 5）
+            var typeCol = ScheduleDataGrid.Columns[5] as DataGridComboBoxColumn;
+            if (typeCol != null)
+                typeCol.ItemsSource = _periodTypes.ToList();
+        }
+
+        /// <summary>刷新课表 DataGrid 数据源</summary>
+        private void RefreshScheduleGrid()
+        {
+            ScheduleDataGrid.ItemsSource = null;
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data?.Entries == null) return;
+            ScheduleDataGrid.ItemsSource = sm.Data.Entries;
+            RefreshScheduleStatus();
+        }
+
+        private void RefreshScheduleStatus()
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm != null)
+            {
+                var today = sm.GetTodayEntries();
+                ScheduleStatusTb.Text = $"已加载 {sm.Data.Entries.Count} 节课 / 今日 {today.Count} 节课 / {sm.Data.Exams.Count} 场考试";
+            }
+        }
+
+        private void AddScheduleEntry_Click(object sender, RoutedEventArgs e)
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data == null) return;
+            sm.Data.Entries.Add(new ScheduleEntry { DayOfWeek = 1, Period = sm.Data.Entries.Count + 1, Subject = "新课程" });
+            RefreshScheduleGrid();
+        }
+
+        private void DeleteScheduleEntry_Click(object sender, RoutedEventArgs e)
+        {
+            if (ScheduleDataGrid.SelectedItem is not ScheduleEntry entry) return;
+            var sm = _mainWindow.GetScheduleManager();
+            sm?.Data?.Entries.Remove(entry);
+            RefreshScheduleGrid();
+        }
+
+        private void SaveSchedule_Click(object sender, RoutedEventArgs e)
+        {
+            // DataGrid 双向绑定已生效，直接保存
+            var sm = _mainWindow.GetScheduleManager();
+            sm?.Save();
+            RefreshScheduleStatus();
+            ScheduleStatusTb.Text += "  ✅ 已保存";
+        }
+
+        // ══════════════════════════════════════════════════════
+        //  考试 DataGrid 直编辑
+        // ══════════════════════════════════════════════════════
+
+        /// <summary>刷新考试 DataGrid</summary>
+        private void RefreshExamGrid()
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data?.Exams == null) return;
+            ExamDataGrid.ItemsSource = null;
+            ExamDataGrid.ItemsSource = sm.Data.Exams;
+            ExamSubjectGrid.ItemsSource = null;
+            RefreshExamStatus();
+        }
+
+        private void RefreshExamStatus()
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm != null)
+                ExamStatusTb.Text = $"已加载 {sm.Data.Exams.Count} 场考试";
+        }
+
+        /// <summary>选中考试时联动展示其科目列表</summary>
+        private void ExamDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ExamDataGrid.SelectedItem is ExamEntry exam)
+                ExamSubjectGrid.ItemsSource = exam.Subjects;
+            else
+                ExamSubjectGrid.ItemsSource = null;
+        }
+
+        private void AddExam_Click(object sender, RoutedEventArgs e)
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data == null) return;
+            sm.Data.Exams.Add(new ExamEntry { Name = "新考试", DateStr = DateTime.Today.ToString("yyyy-MM-dd") });
+            RefreshExamGrid();
+        }
+
+        private void DeleteExam_Click(object sender, RoutedEventArgs e)
+        {
+            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+            var sm = _mainWindow.GetScheduleManager();
+            sm?.Data?.Exams.Remove(exam);
+            RefreshExamGrid();
+        }
+
+        private void AddExamSubject_Click(object sender, RoutedEventArgs e)
+        {
+            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+            exam.Subjects.Add(new ExamSubject { Name = "新科目", StartTimeStr = "09:00", EndTimeStr = "11:00" });
+            ExamSubjectGrid.ItemsSource = null;
+            ExamSubjectGrid.ItemsSource = exam.Subjects;
+        }
+
+        private void DeleteExamSubject_Click(object sender, RoutedEventArgs e)
+        {
+            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+            if (ExamSubjectGrid.SelectedItem is not ExamSubject sub) return;
+            exam.Subjects.Remove(sub);
+            ExamSubjectGrid.ItemsSource = null;
+            ExamSubjectGrid.ItemsSource = exam.Subjects;
+        }
+
+        private void SaveExams_Click(object sender, RoutedEventArgs e)
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            sm?.Save();
+            RefreshExamStatus();
+            ExamStatusTb.Text += "  ✅ 已保存";
         }
     }
 
