@@ -1578,93 +1578,134 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- 课表数据编辑卡片 -->
+                            <!-- 时段模板管理卡片 -->
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
-                                    <TextBlock Text="课表数据编辑" Style="{StaticResource SectionTitle}" Margin="0,0,0,10"/>
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                        <Button Content="＋ 添加课节" Click="AddScheduleEntry_Click"
-                                                Width="100" Background="#332D5A3D"/>
-                                        <Button Content="＋ 批量添加" Click="BatchAddSchedule_Click"
-                                                Width="90" Margin="6,0,0,0" Background="#33336688"
-                                                ToolTip="为指定课程快速填满一周"/>
-                                        <Button Content="－ 删除选中" Click="DeleteScheduleEntry_Click"
-                                                Width="90" Margin="6,0,0,0" Background="#33552222"/>
-                                        <Button Content="保存课表" Click="SaveSchedule_Click"
-                                                Width="80" Margin="6,0,0,0"/>
-                                        <StackPanel Orientation="Horizontal" Margin="12,0,0,0">
-                                            <Button Content="从 JSON 导入" Click="ImportScheduleJson_Click" Width="100"/>
-                                            <Button Content="导出 JSON" Click="ExportScheduleJson_Click" Width="80" Margin="6,0,0,0"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                    <DataGrid x:Name="ScheduleDataGrid"
+                                    <TextBlock Text="时段模板" Style="{StaticResource SectionTitle}" Margin="0,0,0,6"/>
+                                    <TextBlock Text="定义每天的节次时间，课程表网格将按此行展开" FontSize="11"
+                                               Foreground="#66CCCCDD" Margin="0,0,0,8"/>
+                                    <DataGrid x:Name="TimeTemplateGrid"
                                               AutoGenerateColumns="False"
                                               CanUserAddRows="False"
                                               CanUserDeleteRows="False"
-                                              RowHeight="28"
-                                              MaxHeight="340"
-                                              Background="#11FFFFFF"
-                                              Foreground="#DDFFFFFF"
+                                              RowHeight="26" MaxHeight="200"
+                                              Background="#11FFFFFF" Foreground="#DDFFFFFF"
                                               RowBackground="#00FFFFFF"
-                                              AlternatingRowBackground="#08FFFFFF"
                                               BorderBrush="#22FFFFFF"
                                               HeadersVisibility="Column"
                                               GridLinesVisibility="Horizontal"
                                               HorizontalGridLinesBrush="#15FFFFFF"
-                                              SelectionMode="Single"
-                                              SelectionUnit="FullRow"
-                                              CanUserResizeRows="False"
-                                              EnableRowVirtualization="True">
+                                              SelectionMode="Single" SelectionUnit="FullRow"
+                                              CanUserResizeRows="False" EnableRowVirtualization="True">
                                         <DataGrid.Columns>
-                                            <DataGridComboBoxColumn Header="星期" Width="65"
-                                                SelectedValueBinding="{Binding DayOfWeek}"
-                                                SelectedValuePath="Value" DisplayMemberPath="Key">
-                                                <DataGridComboBoxColumn.ElementStyle>
-                                                    <Style TargetType="ComboBox"
-                                                           BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                        <Setter Property="FontSize" Value="11"/>
-                                                    </Style>
-                                                </DataGridComboBoxColumn.ElementStyle>
-                                                <DataGridComboBoxColumn.EditingElementStyle>
-                                                    <Style TargetType="ComboBox"
-                                                           BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                        <Setter Property="FontSize" Value="11"/>
-                                                    </Style>
-                                                </DataGridComboBoxColumn.EditingElementStyle>
-                                            </DataGridComboBoxColumn>
                                             <DataGridTextColumn Header="节次" Width="45" Binding="{Binding Period}" IsReadOnly="False">
                                                 <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
                                             </DataGridTextColumn>
-                                            <DataGridTextColumn Header="课程" Width="100" Binding="{Binding Subject}" IsReadOnly="False"/>
-                                            <DataGridTextColumn Header="上课" Width="60" Binding="{Binding StartTimeStr}" IsReadOnly="False">
+                                            <DataGridTextColumn Header="上课" Width="65" Binding="{Binding StartTime}" IsReadOnly="False">
                                                 <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
                                             </DataGridTextColumn>
-                                            <DataGridTextColumn Header="下课" Width="60" Binding="{Binding EndTimeStr}" IsReadOnly="False">
+                                            <DataGridTextColumn Header="下课" Width="65" Binding="{Binding EndTime}" IsReadOnly="False">
                                                 <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
                                             </DataGridTextColumn>
                                             <DataGridComboBoxColumn Header="类型" Width="70"
-                                                SelectedValueBinding="{Binding Type}"
-                                                SelectedValuePath="Value" DisplayMemberPath="Key">
+                                                SelectedValueBinding="{Binding Type}" SelectedValuePath="Value" DisplayMemberPath="Key">
                                                 <DataGridComboBoxColumn.ElementStyle>
-                                                    <Style TargetType="ComboBox"
-                                                           BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                        <Setter Property="FontSize" Value="11"/>
-                                                    </Style>
+                                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="FontSize" Value="11"/></Style>
                                                 </DataGridComboBoxColumn.ElementStyle>
                                                 <DataGridComboBoxColumn.EditingElementStyle>
-                                                    <Style TargetType="ComboBox"
-                                                           BasedOn="{StaticResource {x:Type ComboBox}}">
-                                                        <Setter Property="FontSize" Value="11"/>
-                                                    </Style>
+                                                    <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}"><Setter Property="FontSize" Value="11"/></Style>
                                                 </DataGridComboBoxColumn.EditingElementStyle>
                                             </DataGridComboBoxColumn>
-                                            <DataGridTextColumn Header="备注" Width="*" Binding="{Binding Remark}" IsReadOnly="False"/>
+                                            <DataGridTextColumn Header="标签" Width="*" Binding="{Binding Label}" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#66CCCCDD"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
                                         </DataGrid.Columns>
                                     </DataGrid>
-                                    <TextBlock x:Name="ScheduleStatusTb" FontSize="12" Foreground="#88CCCCDD"
-                                               Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <Button Content="＋ 添加时段" Click="AddTimeSlot_Click" Width="90" Background="#332D5A3D"/>
+                                        <Button Content="－ 删除时段" Click="DeleteTimeSlot_Click" Width="90" Margin="6,0,0,0" Background="#33552222"/>
+                                        <Button Content="应用到课程表" Click="ApplyTimeTemplate_Click" Width="100" Margin="6,0,0,0" Background="#336688CC" ToolTip="将时段模板应用到下方课程表"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
+
+                            <!-- 课程表网格编辑卡片 -->
+                            <Border Style="{StaticResource CardPanel}">
+                                <StackPanel>
+                                    <TextBlock Text="课程表" Style="{StaticResource SectionTitle}" Margin="0,0,0,6"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Button Content="保存课表" Click="SaveSchedule_Click" Width="80"/>
+                                        <Button Content="从 JSON 导入" Click="ImportScheduleJson_Click" Width="100" Margin="6,0,0,0"/>
+                                        <Button Content="导出 JSON" Click="ExportScheduleJson_Click" Width="80" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <DataGrid x:Name="TimetableGrid"
+                                              AutoGenerateColumns="False"
+                                              CanUserAddRows="False"
+                                              CanUserDeleteRows="False"
+                                              RowHeight="26" MaxHeight="400"
+                                              Background="#11FFFFFF" Foreground="#DDFFFFFF"
+                                              RowBackground="#00FFFFFF"
+                                              BorderBrush="#22FFFFFF"
+                                              HeadersVisibility="Column"
+                                              GridLinesVisibility="All"
+                                              HorizontalGridLinesBrush="#10FFFFFF"
+                                              VerticalGridLinesBrush="#10FFFFFF"
+                                              SelectionMode="Single" SelectionUnit="Cell"
+                                              CanUserResizeRows="False" EnableRowVirtualization="True">
+                                        <DataGrid.Columns>
+                                            <DataGridTextColumn Header="时段" Width="80" Binding="{Binding TimeLabel}" IsReadOnly="True">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#88CCCCDD"/><Setter Property="FontSize" Value="10"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="一" Width="*" Binding="{Binding Mon}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="二" Width="*" Binding="{Binding Tue}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="三" Width="*" Binding="{Binding Wed}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="四" Width="*" Binding="{Binding Thu}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="五" Width="*" Binding="{Binding Fri}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="六" Width="*" Binding="{Binding Sat}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                            <DataGridTextColumn Header="日" Width="*" Binding="{Binding Sun}" IsReadOnly="False">
+                                                <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="HorizontalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle>
+                                            </DataGridTextColumn>
+                                        </DataGrid.Columns>
+                                    </DataGrid>
+
+                                    <!-- 调休工具栏 -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                        <TextBlock Text="调休：" VerticalAlignment="Center" FontSize="12"
+                                                   Foreground="#88CCCCDD" Margin="0,0,8,0"/>
+                                        <ComboBox x:Name="AdjustFromDay" Width="56" SelectedIndex="0" Margin="0,0,4,0">
+                                            <ComboBoxItem Content="一"/><ComboBoxItem Content="二"/>
+                                            <ComboBoxItem Content="三"/><ComboBoxItem Content="四"/>
+                                            <ComboBoxItem Content="五"/><ComboBoxItem Content="六"/>
+                                            <ComboBoxItem Content="日"/>
+                                        </ComboBox>
+                                        <TextBlock Text="→" VerticalAlignment="Center" FontSize="12"
+                                                   Foreground="#88CCCCDD" Margin="0,0,4,0"/>
+                                        <ComboBox x:Name="AdjustToDay" Width="56" SelectedIndex="1" Margin="0,0,8,0">
+                                            <ComboBoxItem Content="一"/><ComboBoxItem Content="二"/>
+                                            <ComboBoxItem Content="三"/><ComboBoxItem Content="四"/>
+                                            <ComboBoxItem Content="五"/><ComboBoxItem Content="六"/>
+                                            <ComboBoxItem Content="日"/>
+                                        </ComboBox>
+                                        <Button Content="应用调休" Click="ApplyShiftRest_Click"
+                                                Width="80" Background="#334488CC"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <TextBlock x:Name="ScheduleStatusTb" FontSize="12" Foreground="#88CCCCDD"
+                                       Margin="0,4,0,0" TextWrapping="Wrap"/>
 
                         </StackPanel>
                     </ScrollViewer>

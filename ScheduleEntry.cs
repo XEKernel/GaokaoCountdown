@@ -115,11 +115,45 @@ namespace GaokaoCountdown
         }
     }
 
+    // ── 时段模板（课程表网格的行）───────────────────────────
+    public class TimeTemplate
+    {
+        public int Period { get; set; }
+        public string StartTime { get; set; } = "08:00";
+        public string EndTime { get; set; } = "08:45";
+        public PeriodType Type { get; set; } = PeriodType.Normal;
+
+        public string TimeDisplay => $"{StartTime}-{EndTime}";
+        public string Label => $"第{Period}节 {TimeDisplay}";
+    }
+
+    // ── 课程表网格行（仅用于 UI DataGrid 绑定）─────────────
+    public class TimetableRow
+    {
+        public string TimeLabel { get; set; } = "";
+        public string Mon { get; set; } = "";
+        public string Tue { get; set; } = "";
+        public string Wed { get; set; } = "";
+        public string Thu { get; set; } = "";
+        public string Fri { get; set; } = "";
+        public string Sat { get; set; } = "";
+        public string Sun { get; set; } = "";
+
+        /// <summary>索引器：0=周一 .. 6=周日</summary>
+        public string this[int day]
+        {
+            get => day switch { 0=>Mon,1=>Tue,2=>Wed,3=>Thu,4=>Fri,5=>Sat,6=>Sun,_=>"" };
+            set { switch(day){case 0:Mon=value;break;case 1:Tue=value;break;case 2:Wed=value;break;case 3:Thu=value;break;case 4:Fri=value;break;case 5:Sat=value;break;case 6:Sun=value;break;} }
+        }
+    }
+
     // ── 课表根容器 ─────────────────────────────────────────
     public class ScheduleData
     {
         public List<ScheduleEntry> Entries { get; set; } = new();
         public List<ExamEntry> Exams { get; set; } = new();
+        /// <summary>时段模板（课程表网格的行定义），若为空则自动从 Entries 推算</summary>
+        public List<TimeTemplate> TimeTemplates { get; set; } = new();
 
         /// <summary>按 星期→节次 排序（DataGrid 展示用）</summary>
         public void SortEntries()

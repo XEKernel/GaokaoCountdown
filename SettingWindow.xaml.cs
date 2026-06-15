@@ -478,8 +478,9 @@ namespace GaokaoCountdown
             var sm = _mainWindow.GetScheduleManager();
             if (sm != null)
             {
-                PopulateScheduleComboColumns();
-                RefreshScheduleGrid();
+                PopulateTimeTemplateCombo();
+                RefreshTimeTemplate();
+                RefreshTimetable();
                 RefreshExamGrid();
             }
 
@@ -1551,6 +1552,8 @@ namespace GaokaoCountdown
                 ScheduleStatusTb.Text = msg;
                 if (ok)
                 {
+                    RefreshTimeTemplate();
+                    RefreshTimetable();
                     var today = sm.GetTodayEntries();
                     ExamStatusTb.Text = $"考试记录：{sm.Data.Exams.Count} 场";
                 }
@@ -1617,16 +1620,6 @@ namespace GaokaoCountdown
             _mainWindow.ExitExamMode();
         }
 
-        // ══════════════════════════════════════════════════════
-        //  课表 DataGrid 直编辑
-        // ══════════════════════════════════════════════════════
-
-        private static readonly Dictionary<string, int> _weekdays = new()
-        {
-            { "周一", 1 }, { "周二", 2 }, { "周三", 3 }, { "周四", 4 },
-            { "周五", 5 }, { "周六", 6 }, { "周日", 7 }
-        };
-
         private static readonly Dictionary<string, PeriodType> _periodTypes = new()
         {
             { "普通课", PeriodType.Normal },
@@ -1636,31 +1629,86 @@ namespace GaokaoCountdown
             { "午休",   PeriodType.Noon },
         };
 
-        /// <summary>填充 DataGrid 的 ComboBox 列选项</summary>
-        private void PopulateScheduleComboColumns()
-        {
-            // 星期列
-            var dayCol = ScheduleDataGrid.Columns[0] as DataGridComboBoxColumn;
-            if (dayCol != null)
-                dayCol.ItemsSource = _weekdays.ToList();
+        private static readonly string[] _dayNames = { "周一", "周二", "周三", "周四", "周五", "周六", "周日" };
 
-            // 类型列（索引 5）
-            var typeCol = ScheduleDataGrid.Columns[5] as DataGridComboBoxColumn;
-            if (typeCol != null)
-                typeCol.ItemsSource = _periodTypes.ToList();
-        }
-
-        /// <summary>刷新课表 DataGrid 数据源</summary>
-        private void RefreshScheduleGrid()
+        /// <summary>从 Entries 构建课程表网格行列表</summary>
+        private List<TimetableRow> BuildTimetableRows()
         {
-            ScheduleDataGrid.ItemsSource = null;
             var sm = _mainWindow.GetScheduleManager();
-            if (sm?.Data?.Entries == null) return;
-            ScheduleDataGrid.ItemsSource = sm.Data.Entries;
-            RefreshScheduleStatus();
+            var entries = sm?.Data?.Entries ?? new();
+            var temps   = sm?.Data?.TimeTemplates ?? new();
+
+            // 如果有时段模板，用它；否则从 entries 推算
+            var slots = temps.Count > 0
+                ? temps.Select(t => (Period: t.Period, Start: t.StartTime, End: t.EndTime, Type: t.Type)).ToList()
+                : entries.GroupBy(e => (e.Period, e.StartTimeStr, e.EndTimeStr, e.Type))
+                         .Select(g => (Period: g.Key.Period, Start: g.Key.StartTimeStr, End: g.Key.EndTimeStr, Type: g.Key.Type))
+                         .OrderBy(x => x.Period).ToList();
+
+            var rows = new List<TimetableRow>();
+            foreach (var (period, start, end, type) in slots)
+            {
+                var row = new TimetableRow
+                {
+                    TimeLabel = type switch
+                    {
+                        PeriodType.Morning => $"早 {start}-{end}",
+                        PeriodType.Evening => $"晚 {start}-{end}",
+                        PeriodType.Reading => $"读 {start}-{end}",
+                        PeriodType.Noon    => $"午 {start}-{end}",
+                        _                  => $"第{period}节 {start}-{end}"
+                    }
+                };
+                for (int d = 0; d < 7; d++)
+                    row[d] = entries.FirstOrDefault(e => e.DayOfWeek == d + 1 && e.Period == period)?.Subject ?? "";
+                rows.Add(row);
+            }
+            return rows;
         }
 
-        private void RefreshScheduleStatus()
+        /// <summary>从课程表网格回写 Entries</summary>
+        private void SaveTimetableToEntries(List<TimetableRow> rows)
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data == null) return;
+            sm.Data.Entries.Clear();
+
+            var temps = sm.Data.TimeTemplates;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var row = rows[i];
+                // 解析时段信息
+                var slot = i < temps.Count
+                    ? (Period: temps[i].Period, StartTime: temps[i].StartTime, EndTime: temps[i].EndTime, Type: temps[i].Type)
+                    : (Period: i + 1, StartTime: "08:00", EndTime: "08:45", Type: PeriodType.Normal);
+
+                for (int d = 0; d < 7; d++)
+                {
+                    var subj = row[d]?.Trim();
+                    if (string.IsNullOrEmpty(subj)) continue;
+                    sm.Data.Entries.Add(new ScheduleEntry
+                    {
+                        DayOfWeek = d + 1,
+                        Period = slot.Period,
+                        Subject = subj,
+                        StartTimeStr = slot.StartTime,
+                        EndTimeStr = slot.EndTime,
+                        Type = slot.Type
+                    });
+                }
+            }
+            sm.Data.SortEntries();
+            sm.Save();
+        }
+
+        private void RefreshTimetable()
+        {
+            TimetableGrid.ItemsSource = null;
+            TimetableGrid.ItemsSource = BuildTimetableRows();
+            RefreshTimetableStatus();
+        }
+
+        private void RefreshTimetableStatus()
         {
             var sm = _mainWindow.GetScheduleManager();
             if (sm != null)
@@ -1670,113 +1718,91 @@ namespace GaokaoCountdown
             }
         }
 
-        private void AddScheduleEntry_Click(object sender, RoutedEventArgs e)
+        /// <summary>填充时段模板 DataGrid 的 ComboBox 列</summary>
+        private void PopulateTimeTemplateCombo()
+        {
+            var typeCol = TimeTemplateGrid.Columns[3] as DataGridComboBoxColumn;
+            if (typeCol != null) typeCol.ItemsSource = _periodTypes.ToList();
+        }
+
+        private void RefreshTimeTemplate()
+        {
+            TimeTemplateGrid.ItemsSource = null;
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data?.TimeTemplates == null) return;
+            TimeTemplateGrid.ItemsSource = sm.Data.TimeTemplates;
+        }
+
+        private void AddTimeSlot_Click(object sender, RoutedEventArgs e)
         {
             var sm = _mainWindow.GetScheduleManager();
             if (sm?.Data == null) return;
-
-            // 智能默认值：从上一行推算节次和时间
-            int nextPeriod = 1;
-            string startTime = "08:00";
-            string endTime   = "08:45";
-            int lastDay = 1;
-
-            if (sm.Data.Entries.Count > 0)
+            int nextP = sm.Data.TimeTemplates.Count > 0
+                ? sm.Data.TimeTemplates[^1].Period + 1 : 1;
+            string start = "08:00", end = "08:45";
+            if (sm.Data.TimeTemplates.Count > 0)
             {
-                var last = sm.Data.Entries[sm.Data.Entries.Count - 1];
-                lastDay = last.DayOfWeek;
-                nextPeriod = last.Period + 1;
-                // 时间从前一节课推算（用上一节下课+5分钟）
-                if (TimeSpan.TryParse(last.EndTimeStr, out var lastEnd))
+                if (TimeSpan.TryParse(sm.Data.TimeTemplates[^1].EndTime, out var lastEnd))
                 {
-                    var nextStart = lastEnd.Add(TimeSpan.FromMinutes(5));
-                    var nextEnd   = nextStart.Add(TimeSpan.FromMinutes(45));
-                    startTime = $"{nextStart.Hours:D2}:{nextStart.Minutes:D2}";
-                    endTime   = $"{nextEnd.Hours:D2}:{nextEnd.Minutes:D2}";
+                    var ns = lastEnd.Add(TimeSpan.FromMinutes(5));
+                    start = $"{ns.Hours:D2}:{ns.Minutes:D2}";
+                    end   = $"{ns.Add(TimeSpan.FromMinutes(40)).Hours:D2}:{ns.Add(TimeSpan.FromMinutes(40)).Minutes:D2}";
                 }
             }
-
-            sm.Data.Entries.Add(new ScheduleEntry
-            {
-                DayOfWeek = lastDay,
-                Period = nextPeriod,
-                Subject = "新课程",
-                StartTimeStr = startTime,
-                EndTimeStr = endTime
-            });
-            sm.Data.SortEntries();
-            RefreshScheduleGrid();
-
-            // 滚动到新行
-            ScheduleDataGrid.SelectedIndex = sm.Data.Entries.Count - 1;
-            ScheduleDataGrid.ScrollIntoView(ScheduleDataGrid.SelectedItem);
-            // 自动进入编辑模式
-            ScheduleDataGrid.Focus();
-            ScheduleDataGrid.CurrentCell = new DataGridCellInfo(
-                ScheduleDataGrid.Items[ScheduleDataGrid.SelectedIndex],
-                ScheduleDataGrid.Columns[2]); // 课程列
-            ScheduleDataGrid.BeginEdit();
-        }
-
-        private void BatchAddSchedule_Click(object sender, RoutedEventArgs e)
-        {
-            var sm = _mainWindow.GetScheduleManager();
-            if (sm?.Data == null) return;
-
-            var dialog = new BatchInputDialog { Owner = this };
-            if (dialog.ShowDialog() != true) return;
-
-            // 根据所选星期批量添加
-            string name = dialog.CourseName;
-            string start = dialog.StartTime;
-            string end = dialog.EndTime;
-            var type = dialog.Type;
-
-            foreach (int day in dialog.SelectedDays)
-            {
-                // 计算该天的节次（比已有最大节次+1，或从 1 开始）
-                int maxPeriod = 0;
-                foreach (var e2 in sm.Data.Entries)
-                    if (e2.DayOfWeek == day && e2.Period > maxPeriod)
-                        maxPeriod = e2.Period;
-
-                sm.Data.Entries.Add(new ScheduleEntry
-                {
-                    DayOfWeek = day,
-                    Period = maxPeriod + 1,
-                    Subject = name,
-                    StartTimeStr = start,
-                    EndTimeStr = end,
-                    Type = type
-                });
-            }
-
-            sm.Data.SortEntries();
+            sm.Data.TimeTemplates.Add(new TimeTemplate { Period = nextP, StartTime = start, EndTime = end });
             sm.Save();
-            RefreshScheduleGrid();
-            ScheduleStatusTb.Text += $"  ✅ 已添加 {dialog.SelectedDays.Count} 天";
+            RefreshTimeTemplate();
         }
 
-        private void DeleteScheduleEntry_Click(object sender, RoutedEventArgs e)
+        private void DeleteTimeSlot_Click(object sender, RoutedEventArgs e)
         {
-            if (ScheduleDataGrid.SelectedItem is not ScheduleEntry entry) return;
-            var r = WpfMessageBox.Show(
-                $"确定要删除「{entry.Subject}」(周{entry.DayOfWeek} 第{entry.Period}节)吗？",
-                "删除确认", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (TimeTemplateGrid.SelectedItem is not TimeTemplate t) return;
+            var r = WpfMessageBox.Show($"确定删除「{t.Label}」吗？", "删除时段", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (r != MessageBoxResult.Yes) return;
             var sm = _mainWindow.GetScheduleManager();
-            sm?.Data?.Entries.Remove(entry);
-            RefreshScheduleGrid();
+            sm?.Data?.TimeTemplates.Remove(t);
+            sm?.Save();
+            RefreshTimeTemplate();
+        }
+
+        private void ApplyTimeTemplate_Click(object sender, RoutedEventArgs e)
+        {
+            var sm = _mainWindow.GetScheduleManager();
+            if (sm?.Data?.TimeTemplates.Count == 0) return;
+            sm.Save();
+            RefreshTimetable();
+            ScheduleStatusTb.Text += "  ✅ 已应用时段模板";
+        }
+
+        private void ApplyShiftRest_Click(object sender, RoutedEventArgs e)
+        {
+            int from = AdjustFromDay.SelectedIndex; // 0=周一..6=周日
+            int to   = AdjustToDay.SelectedIndex;
+            if (from == to) return;
+
+            var r = WpfMessageBox.Show(
+                $"确定将{_dayNames[from]}的课程复制到{_dayNames[to]}吗？",
+                "调休确认", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r != MessageBoxResult.Yes) return;
+
+            if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return;
+            foreach (var row in rows)
+                row[to] = row[from];
+            TimetableGrid.ItemsSource = null;
+            TimetableGrid.ItemsSource = rows;
+            ScheduleStatusTb.Text = $"  ✅ 已从{_dayNames[from]}调休至{_dayNames[to]}";
         }
 
         private void SaveSchedule_Click(object sender, RoutedEventArgs e)
         {
-            // DataGrid 双向绑定已生效，直接保存
-            var sm = _mainWindow.GetScheduleManager();
-            sm?.Save();
-            RefreshScheduleStatus();
+            TimetableGrid.CommitEdit(DataGridEditingUnit.Row, true);
+            if (TimetableGrid.ItemsSource is List<TimetableRow> rows)
+                SaveTimetableToEntries(rows);
+            RefreshTimetableStatus();
             ScheduleStatusTb.Text += "  ✅ 已保存";
         }
+
+        private void DeleteScheduleEntry_Click(object sender, RoutedEventArgs e) { /* 课程表网格不再需要 */ }
 
         // ══════════════════════════════════════════════════════
         //  考试 DataGrid 直编辑
