@@ -23,6 +23,7 @@ namespace GaokaoCountdown
         // ── 当前显示状态 ──────────────────────────────────────
         private string _currentSubjectName = string.Empty;
         private bool   _warnShown          = false;
+        private bool   _autoExited         = false;  // 防止重复自动退出
 
         public ExamModeWindow(ScheduleManager manager, AppSettings settings)
         {
@@ -252,6 +253,19 @@ namespace GaokaoCountdown
                     ProgressPctTb.Text  = "100%";
                     NextSubjectTb.Text  = string.Empty;
                     WarningTb.Visibility = Visibility.Collapsed;
+
+                    // 最后一场考试结束 → 3 秒后自动退出，恢复正常上课状态
+                    if (!_autoExited)
+                    {
+                        _autoExited = true;
+                        var autoClose = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+                        autoClose.Tick += (s, args) =>
+                        {
+                            autoClose.Stop();
+                            if (IsLoaded) CloseWindow();
+                        };
+                        autoClose.Start();
+                    }
                 }
             }
         }

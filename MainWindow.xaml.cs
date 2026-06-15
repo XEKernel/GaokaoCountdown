@@ -400,7 +400,13 @@ namespace GaokaoCountdown
             if (settings.ShowScheduleBar)
                 HideScheduleBarWindow();
             _examModeWindow = new ExamModeWindow(_scheduleManager, settings);
-            _examModeWindow.Closed += (s, e) => _examModeWindow = null;
+            _examModeWindow.Closed += (s, e) =>
+            {
+                _examModeWindow = null;
+                // 考试窗口关闭时恢复课表栏
+                if (settings.ShowScheduleBar && _scheduleBarWindow == null)
+                    ShowScheduleBarWindow();
+            };
             _examModeWindow.Show();
         }
 
