@@ -712,7 +712,7 @@
                 <!-- 内容面板（手动切换，支持出入场动画） -->
                 <Grid Grid.Row="1" Margin="8,-2,8,0" ClipToBounds="True" x:Name="ContentHost">
                     <!-- ═══ TAB 0：外观 ═══ -->
-                    <ScrollViewer x:Name="ContentAppearance" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentAppearance" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Visible">
                         <StackPanel Margin="6,8,6,12">
                             <!-- 字体卡片 -->
@@ -793,7 +793,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 1：位置 ═══ -->
-                    <ScrollViewer x:Name="ContentPosition" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentPosition" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -870,7 +870,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 2：显示 ═══ -->
-                    <ScrollViewer x:Name="ContentDisplay" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentDisplay" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -920,7 +920,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 3：文本 ═══ -->
-                    <ScrollViewer x:Name="ContentText" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentText" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -959,7 +959,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 4：日期 ═══ -->
-                    <ScrollViewer x:Name="ContentDate" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentDate" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -990,7 +990,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 5：动画 ═══ -->
-                    <ScrollViewer x:Name="ContentAnimation" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentAnimation" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -1029,7 +1029,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 6：API 功能（每日一言 + 天气） ═══ -->
-                    <ScrollViewer x:Name="ContentApi" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentApi" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -1307,7 +1307,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 7：关于 ═══ -->
-                    <ScrollViewer x:Name="ContentAbout" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentAbout" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -1507,7 +1507,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 8：课表 ═══ -->
-                    <ScrollViewer x:Name="ContentSchedule" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentSchedule" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
@@ -1663,7 +1663,7 @@
                     </ScrollViewer>
 
                     <!-- ═══ TAB 9：考试模式 ═══ -->
-                    <ScrollViewer x:Name="ContentExam" VerticalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="ContentExam" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Collapsed">
                         <StackPanel Margin="6,8,6,12">
 
