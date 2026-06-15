@@ -13,7 +13,7 @@ namespace GaokaoCountdown
     public partial class ReminderWindow : Window
     {
         private readonly DispatcherTimer _dismissTimer;
-        private const double ShowDurationMs = 5000;  // 显示 5 秒
+        private const double ShowDurationMs = 8000;  // 显示 8 秒
         private const double FadeOutDurationMs = 350;
 
         // 当前显示队列的管理（静态，支持多条通知叠放）
@@ -114,6 +114,35 @@ namespace GaokaoCountdown
         private void CloseBtn_Click(object sender, RoutedEventArgs e)
         {
             Dismiss();
+        }
+
+        /// <summary>稍后提醒：关闭窗口，5分钟后重新弹出同一条提醒</summary>
+        private void SnoozeBtn_Click(object sender, RoutedEventArgs e)
+        {
+            var title = TitleTb.Text;
+            var message = MessageTb.Text;
+            var accentColor = (AccentBar.Background as SolidColorBrush)?.Color ?? Colors.Gray;
+            Dismiss();
+
+            // 5 分钟后重新弹出
+            var snoozeTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+            snoozeTimer.Tick += (s, args) =>
+            {
+                snoozeTimer.Stop();
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var win = new ReminderWindow();
+                    _current = win;
+                    win.IconTb.Text = "\u23F0"; // ⏰
+                    win.TitleTb.Text = $"[稍后提醒] {title}";
+                    win.MessageTb.Text = message;
+                    win.AccentBar.Background = new SolidColorBrush(accentColor);
+                    win.PositionAtBottomRight();
+                    win.Show();
+                    win._dismissTimer.Start();
+                });
+            };
+            snoozeTimer.Start();
         }
 
         /// <summary>根据提醒类型返回图标和强调色</summary>

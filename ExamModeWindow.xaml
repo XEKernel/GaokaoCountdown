@@ -23,8 +23,8 @@
         </Grid.RowDefinitions>
 
         <!-- ESC 提示（保留键盘退出方式） -->
-        <TextBlock x:Name="EscHintTb" Grid.Row="0" Text="ESC 退出"
-                   FontSize="12" Foreground="#33FFFFFF"
+        <TextBlock x:Name="EscHintTb" Grid.Row="0" Text="ESC 退出 · 双击切换窗口 · F11 全屏"
+                   FontSize="12" Foreground="#88FFFFFF"
                    HorizontalAlignment="Right" VerticalAlignment="Top"
                    Margin="0,20,30,0"/>
 

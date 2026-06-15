@@ -38,6 +38,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- 左侧彩色指示条 -->
@@ -167,6 +168,21 @@
                     </ControlTemplate>
                 </Button.Template>
             </Button>
+
+            <!-- 底部操作按钮 -->
+            <StackPanel Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="2"
+                        Orientation="Horizontal" HorizontalAlignment="Right"
+                        Margin="12,4,12,8">
+                <Button Content="稍后提醒 (5分钟)" Click="SnoozeBtn_Click"
+                        Width="120" Height="26" FontSize="11"
+                        Background="#22FFFFFF" Foreground="#AACCCCEE"
+                        BorderBrush="#20FFFFFF" BorderThickness="1"
+                        Cursor="Hand" Margin="0,0,8,0"/>
+                <Button Content="知道了" Click="CloseBtn_Click"
+                        Width="64" Height="26" FontSize="11"
+                        Background="#336688CC" Foreground="#FFFFFFFF"
+                        BorderThickness="0" Cursor="Hand"/>
+            </StackPanel>
 
         </Grid>
     </Border>

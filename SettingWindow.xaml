@@ -2064,10 +2064,11 @@
                             Margin="0,0,12,0" VerticalAlignment="Center">
                     <Button Content="重置默认" Click="ResetButton_Click" Width="76"
                             Background="#22FF6666" Foreground="#FFFF8888"/>
-                    <Button Content="应用"   Click="ApplyButton_Click"  Width="64"/>
-                    <Button Content="确定"   Click="OKButton_Click"     Width="64"
+                    <Button Content="应用"       Click="ApplyButton_Click"  Width="64"
+                            ToolTip="保存设置但不关闭窗口"/>
+                    <Button Content="保存并关闭" Click="OKButton_Click"     Width="84"
                             Background="#336688CC"/>
-                    <Button Content="取消"   Click="CancelButton_Click" Width="64"
+                    <Button Content="关闭"       Click="CancelButton_Click" Width="64"
                             Background="#22FFFFFF"/>
                 </StackPanel>
             </Border>

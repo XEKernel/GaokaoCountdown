@@ -142,7 +142,17 @@ namespace GaokaoCountdown
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
+            {
+                if (!string.IsNullOrEmpty(_currentSubjectName))
+                {
+                    var r = System.Windows.MessageBox.Show(
+                        "确定要退出考试模式吗？\n当前科目计时将被中断。",
+                        "退出考试", System.Windows.MessageBoxButton.YesNo,
+                        System.Windows.MessageBoxImage.Question);
+                    if (r != System.Windows.MessageBoxResult.Yes) return;
+                }
                 CloseWindow();
+            }
             else if (e.Key == Key.F11)
                 ToggleFullScreen();
         }
@@ -172,6 +182,14 @@ namespace GaokaoCountdown
 
         private void ExitBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (!string.IsNullOrEmpty(_currentSubjectName))
+            {
+                var r = System.Windows.MessageBox.Show(
+                    "确定要退出考试模式吗？\n当前科目计时将被中断。",
+                    "退出考试", System.Windows.MessageBoxButton.YesNo,
+                    System.Windows.MessageBoxImage.Question);
+                if (r != System.Windows.MessageBoxResult.Yes) return;
+            }
             CloseWindow();
         }
 

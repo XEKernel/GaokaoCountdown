@@ -630,6 +630,14 @@ namespace GaokaoCountdown
             CompactRow.BeginAnimation(UIElement.OpacityProperty, fadeOut);
         }
 
+        /// <summary>手动展开按钮（紧凑模式下点击展开箭头）</summary>
+        private void ExpandBtn_Click(object sender, RoutedEventArgs e)
+        {
+            _expandTimer?.Stop();
+            _expandTimer = null;
+            SetExpanded();
+        }
+
         /// <summary>提醒时临时展开 10 秒，之后若仍在课上则恢复紧凑</summary>
         public void ExpandOnReminder(ReminderType type)
         {

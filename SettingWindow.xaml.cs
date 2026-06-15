@@ -1760,6 +1760,10 @@ namespace GaokaoCountdown
         private void DeleteScheduleEntry_Click(object sender, RoutedEventArgs e)
         {
             if (ScheduleDataGrid.SelectedItem is not ScheduleEntry entry) return;
+            var r = WpfMessageBox.Show(
+                $"确定要删除「{entry.Subject}」(周{entry.DayOfWeek} 第{entry.Period}节)吗？",
+                "删除确认", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r != MessageBoxResult.Yes) return;
             var sm = _mainWindow.GetScheduleManager();
             sm?.Data?.Entries.Remove(entry);
             RefreshScheduleGrid();
@@ -1870,7 +1874,11 @@ namespace GaokaoCountdown
             {
                 if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
 
-                // 提交可能存在的待编辑
+                var r = WpfMessageBox.Show(
+                    $"确定要删除考试「{exam.Name}」及其所有科目吗？",
+                    "删除确认", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (r != MessageBoxResult.Yes) return;
+
                 ExamDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
                 var sm = _mainWindow.GetScheduleManager();
@@ -1909,7 +1917,11 @@ namespace GaokaoCountdown
                 if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
                 if (ExamSubjectGrid.SelectedItem is not ExamSubject sub) return;
 
-                // 提交可能存在的待编辑，防止崩溃
+                var r = WpfMessageBox.Show(
+                    $"确定要删除科目「{sub.Name}」吗？",
+                    "删除确认", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (r != MessageBoxResult.Yes) return;
+
                 ExamSubjectGrid.CommitEdit(DataGridEditingUnit.Row, true);
 
                 exam.Subjects.Remove(sub);
