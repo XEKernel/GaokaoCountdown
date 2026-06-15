@@ -260,9 +260,20 @@ namespace GaokaoCountdown
             sv.Opacity = 1;
             sv.Visibility = Visibility.Visible;
 
-            ((TranslateTransform)sv.RenderTransform).BeginAnimation(
-                TranslateTransform.XProperty,
-                new DoubleAnimation(startX, 0, SlideTime) { EasingFunction = SlideEase });
+            // 动画完成后必须释放时钟，否则 HoldEnd 会干扰 ScrollViewer
+            // 内部 ScrollBar 的属性变更，导致拖动"不跟手"。
+            var xAnim = new DoubleAnimation(startX, 0, SlideTime)
+            {
+                EasingFunction = SlideEase,
+                FillBehavior = FillBehavior.Stop
+            };
+            xAnim.Completed += (_, _) =>
+            {
+                ((TranslateTransform)sv.RenderTransform).X = 0;
+                ((TranslateTransform)sv.RenderTransform).BeginAnimation(
+                    TranslateTransform.XProperty, null);
+            };
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, xAnim);
         }
 
         /// <summary>旧页面滑出：从 X=0 平移出视口，完成后折叠</summary>
