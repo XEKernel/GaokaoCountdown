@@ -386,6 +386,9 @@ namespace GaokaoCountdown
         {
             if (_examModeWindow != null) { _examModeWindow.Activate(); return; }
             if (_scheduleManager == null) return;
+            // 进入考试模式时隐藏课表栏
+            if (settings.ShowScheduleBar)
+                HideScheduleBarWindow();
             _examModeWindow = new ExamModeWindow(_scheduleManager, settings);
             _examModeWindow.Closed += (s, e) => _examModeWindow = null;
             _examModeWindow.Show();
@@ -395,6 +398,9 @@ namespace GaokaoCountdown
         {
             _examModeWindow?.Close();
             _examModeWindow = null;
+            // 退出考试模式时恢复课表栏
+            if (settings.ShowScheduleBar)
+                ShowScheduleBarWindow();
         }
 
         public void RefreshDateFields()
