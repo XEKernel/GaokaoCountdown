@@ -1418,12 +1418,21 @@ namespace GaokaoCountdown
         // ── 拖动窗口 ──────────────────────────────────────────
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.OriginalSource is not TextBox
-                && e.OriginalSource is not ComboBox
-                && e.OriginalSource is not ScrollBar
-                && e.OriginalSource is not Thumb
-                && e.OriginalSource is not RepeatButton)
-                DragMove();
+            if (e.OriginalSource is TextBox
+                || e.OriginalSource is ComboBox)
+                return;
+
+            // 沿可视化树向上查找：如果点击位于 ScrollBar 内部
+            //（Thumb/RepeatButton/Track 等模板子元素），让 ScrollBar 自行处理
+            DependencyObject? current = e.OriginalSource as DependencyObject;
+            while (current != null)
+            {
+                if (current is ScrollBar)
+                    return;
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            DragMove();
         }
 
         // ══════════════════════════════════════════════════════
@@ -1658,12 +1667,28 @@ namespace GaokaoCountdown
         /// <summary>刷新考试 DataGrid</summary>
         private void RefreshExamGrid()
         {
-            var sm = _mainWindow.GetScheduleManager();
-            if (sm?.Data?.Exams == null) return;
-            ExamDataGrid.ItemsSource = null;
-            ExamDataGrid.ItemsSource = sm.Data.Exams;
-            ExamSubjectGrid.ItemsSource = null;
-            RefreshExamStatus();
+            try
+            {
+                // 提交所有待编辑，防止状态不一致崩溃
+                ExamDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+                ExamSubjectGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                var sm = _mainWindow.GetScheduleManager();
+                if (sm?.Data?.Exams == null)
+                {
+                    ExamDataGrid.ItemsSource = null;
+                    ExamSubjectGrid.ItemsSource = null;
+                    return;
+                }
+                ExamDataGrid.ItemsSource = null;
+                ExamDataGrid.ItemsSource = sm.Data.Exams;
+                ExamSubjectGrid.ItemsSource = null;
+                RefreshExamStatus();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"RefreshExamGrid error: {ex.Message}");
+            }
         }
 
         private void RefreshExamStatus()
@@ -1684,43 +1709,97 @@ namespace GaokaoCountdown
 
         private void AddExam_Click(object sender, RoutedEventArgs e)
         {
-            var sm = _mainWindow.GetScheduleManager();
-            if (sm?.Data == null) return;
-            sm.Data.Exams.Add(new ExamEntry { Name = "新考试", DateStr = DateTime.Today.ToString("yyyy-MM-dd") });
-            RefreshExamGrid();
+            try
+            {
+                // 提交可能存在的待编辑
+                ExamDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                var sm = _mainWindow.GetScheduleManager();
+                if (sm?.Data == null) return;
+                sm.Data.Exams.Add(new ExamEntry { Name = "新考试", DateStr = DateTime.Today.ToString("yyyy-MM-dd") });
+                RefreshExamGrid();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AddExam error: {ex.Message}");
+            }
         }
 
         private void DeleteExam_Click(object sender, RoutedEventArgs e)
         {
-            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
-            var sm = _mainWindow.GetScheduleManager();
-            sm?.Data?.Exams.Remove(exam);
-            RefreshExamGrid();
+            try
+            {
+                if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+
+                // 提交可能存在的待编辑
+                ExamDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                var sm = _mainWindow.GetScheduleManager();
+                sm?.Data?.Exams.Remove(exam);
+                RefreshExamGrid();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteExam error: {ex.Message}");
+            }
         }
 
         private void AddExamSubject_Click(object sender, RoutedEventArgs e)
         {
-            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
-            exam.Subjects.Add(new ExamSubject { Name = "新科目", StartTimeStr = "09:00", EndTimeStr = "11:00" });
-            ExamSubjectGrid.ItemsSource = null;
-            ExamSubjectGrid.ItemsSource = exam.Subjects;
+            try
+            {
+                if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+
+                // 提交可能存在的待编辑，防止崩溃
+                ExamSubjectGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                exam.Subjects.Add(new ExamSubject { Name = "新科目", StartTimeStr = "09:00", EndTimeStr = "11:00" });
+                ExamSubjectGrid.ItemsSource = null;
+                ExamSubjectGrid.ItemsSource = exam.Subjects;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"AddExamSubject error: {ex.Message}");
+            }
         }
 
         private void DeleteExamSubject_Click(object sender, RoutedEventArgs e)
         {
-            if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
-            if (ExamSubjectGrid.SelectedItem is not ExamSubject sub) return;
-            exam.Subjects.Remove(sub);
-            ExamSubjectGrid.ItemsSource = null;
-            ExamSubjectGrid.ItemsSource = exam.Subjects;
+            try
+            {
+                if (ExamDataGrid.SelectedItem is not ExamEntry exam) return;
+                if (ExamSubjectGrid.SelectedItem is not ExamSubject sub) return;
+
+                // 提交可能存在的待编辑，防止崩溃
+                ExamSubjectGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                exam.Subjects.Remove(sub);
+                ExamSubjectGrid.ItemsSource = null;
+                ExamSubjectGrid.ItemsSource = exam.Subjects;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteExamSubject error: {ex.Message}");
+            }
         }
 
         private void SaveExams_Click(object sender, RoutedEventArgs e)
         {
-            var sm = _mainWindow.GetScheduleManager();
-            sm?.Save();
-            RefreshExamStatus();
-            ExamStatusTb.Text += "  ✅ 已保存";
+            try
+            {
+                // 提交所有待编辑，确保最新修改被保存
+                ExamDataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+                ExamSubjectGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+                var sm = _mainWindow.GetScheduleManager();
+                sm?.Save();
+                RefreshExamStatus();
+                ExamStatusTb.Text += "  ✅ 已保存";
+            }
+            catch (Exception ex)
+            {
+                ExamStatusTb.Text = $"保存失败：{ex.Message}";
+            }
         }
     }
 
