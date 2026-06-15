@@ -365,9 +365,9 @@ namespace GaokaoCountdown
             double subjectSize     = baseFont * 0.8;
             double timeSize        = baseFont * 0.65;
 
-            if (entries.Count == 0 && _showTomorrowPreview)
+            // 放学后直接展示明天课程，不显示今天的
+            if (_showTomorrowPreview)
             {
-                // 今日无课，展示明天课程预览
                 var tomorrowEntries = _manager.GetTodayEntries(now.Date.AddDays(1));
                 if (tomorrowEntries.Count > 0)
                 {
@@ -380,11 +380,22 @@ namespace GaokaoCountdown
                         Margin = new Thickness(6, 0, 6, 0)
                     };
                     PeriodPanel.Children.Add(header);
-
                     foreach (var entry in tomorrowEntries)
                         BuildCard(entry, false, false, periodLabelSize, subjectSize, timeSize);
-                    return;
                 }
+                else
+                {
+                    var empty = new TextBlock
+                    {
+                        Text = "明日无课",
+                        FontSize = periodLabelSize * 1.2,
+                        Foreground = BrGray,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Margin = new Thickness(6, 0, 0, 0)
+                    };
+                    PeriodPanel.Children.Add(empty);
+                }
+                return;
             }
 
             if (entries.Count == 0)
@@ -406,26 +417,6 @@ namespace GaokaoCountdown
                 bool isCur  = cur  == entry;
                 bool isNext = next == entry;
                 BuildCard(entry, isCur, isNext, periodLabelSize, subjectSize, timeSize);
-            }
-
-            // 当日课程全部结束后，附加明天课程预览
-            if (_showTomorrowPreview)
-            {
-                var tomorrowEntries = _manager.GetTodayEntries(now.Date.AddDays(1));
-                if (tomorrowEntries.Count > 0)
-                {
-                    var header = new TextBlock
-                    {
-                        Text = "── 明天课程 ──",
-                        FontSize = periodLabelSize * 1.1,
-                        Foreground = BrOrange,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Margin = new Thickness(0, 6, 0, 2)
-                    };
-                    PeriodPanel.Children.Add(header);
-                    foreach (var entry in tomorrowEntries)
-                        BuildCard(entry, false, false, periodLabelSize, subjectSize, timeSize);
-                }
             }
         }
 
