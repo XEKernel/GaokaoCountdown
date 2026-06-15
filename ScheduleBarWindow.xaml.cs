@@ -188,6 +188,7 @@ namespace GaokaoCountdown
         private bool _flashVisible = true;
         private const int FLASH_THRESHOLD_SECONDS = 60;
         private bool _showTomorrowPreview = false;
+        private bool _tomorrowChecked = false;   // 防止每天重复检查
 
         // ── 课节卡片缓存（避免每秒重建 UI）─────────────────────
         private DateTime _lastBuildDate = DateTime.MinValue;
@@ -330,21 +331,22 @@ namespace GaokaoCountdown
 
             // ── 放学后 / 周末显示明天课程 ──
             bool todayDone = cur == null && next == null;
-            if (todayDone && _lastBuildDate != now.Date)
+            if (todayDone && !_tomorrowChecked)
             {
-                // 当天课已全部结束或今日无课，检查明天
+                _tomorrowChecked = true;
                 var tomorrowEntries = _manager.GetTodayEntries(now.Date.AddDays(1));
                 if (tomorrowEntries.Count > 0)
                 {
                     _showTomorrowPreview = true;
                     _lastBuildDate = DateTime.MinValue; // 强制重建
                     RebuildPeriodPanel(now);
-                    _lastBuildDate = now.Date; // 恢复缓存键
+                    _lastBuildDate = now.Date;
                 }
             }
             else if (!todayDone)
             {
                 _showTomorrowPreview = false;
+                _tomorrowChecked = false;
             }
         }
 
@@ -404,6 +406,26 @@ namespace GaokaoCountdown
                 bool isCur  = cur  == entry;
                 bool isNext = next == entry;
                 BuildCard(entry, isCur, isNext, periodLabelSize, subjectSize, timeSize);
+            }
+
+            // 当日课程全部结束后，附加明天课程预览
+            if (_showTomorrowPreview)
+            {
+                var tomorrowEntries = _manager.GetTodayEntries(now.Date.AddDays(1));
+                if (tomorrowEntries.Count > 0)
+                {
+                    var header = new TextBlock
+                    {
+                        Text = "── 明天课程 ──",
+                        FontSize = periodLabelSize * 1.1,
+                        Foreground = BrOrange,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        Margin = new Thickness(0, 6, 0, 2)
+                    };
+                    PeriodPanel.Children.Add(header);
+                    foreach (var entry in tomorrowEntries)
+                        BuildCard(entry, false, false, periodLabelSize, subjectSize, timeSize);
+                }
             }
         }
 
