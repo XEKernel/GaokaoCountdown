@@ -75,8 +75,8 @@ jobs:
       - name: Verify signatures
         if: github.event_name == 'push'
         run: |
-          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.exe"
-          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.dll"
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /v "${{ env.Project_Directory }}\publish\学程.exe"
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /v "${{ env.Project_Directory }}\publish\学程.dll"
         shell: pwsh
 
       - name: Remove certificate
