@@ -59,7 +59,7 @@ jobs:
             自动构建 · `${{ github.sha }}`
             ${{ github.event.head_commit.message }}
           files: 学程-win-x64.zip
-          prerelease: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

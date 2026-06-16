@@ -1438,11 +1438,11 @@
                                         <LineBreak/>
                                         <Run Text="&#x1F4CA; 进度条直观展示高中生活完成度，百分比文字独立开关"/>
                                         <LineBreak/>
-                                        <Run Text="&#x1F4DD; 考试全屏倒计时，科目剩余时间/进度/下一场可视化，最后5分钟蜂鸣提醒"/>
+                                        <Run Text="&#x1F4DD; 考试全屏倒计时，科目剩余时间/进度/下一场可视化，蜂鸣提醒+确认退出"/>
                                         <LineBreak/>
-                                        <Run Text="&#x1F4C5; 课表栏（课程表网格视图），自动收缩+紧凑模式展开按钮+放学显示明天课程"/>
+                                        <Run Text="&#x1F4C5; 课表栏（课程表网格），自动收缩+展开按钮+放学显示明天+调休功能"/>
                                         <LineBreak/>
-                                        <Run Text="&#x1F504; 调休功能，一键复制某天课表到另一天"/>
+                                        <Run Text="&#x2328; 全局快捷键（Ctrl+Shift+H/B/E），无需鼠标快速操作"/>
                                         <LineBreak/>
                                         <Run Text="&#x2601; 实时天气（窗口 + 文本两种模式），支持城市名输入"/>
                                         <LineBreak/>
@@ -1474,6 +1474,20 @@
                                     <TextBlock Text="v1.3" FontSize="13" FontWeight="SemiBold"
                                                Foreground="#FF6688CC" Margin="0,0,0,4"/>
                                     <TextBlock FontSize="11" Foreground="#88CCCCDD" TextWrapping="Wrap" LineHeight="18">
+                                        <Run Text="• 设置 Tab 合并精简：10 个 → 7 个（外观+显示+动画 / 内容=文本+日期）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 全局快捷键：Ctrl+Shift+H 显隐主窗口 · B 切换课表栏 · E 考试模式"/>
+                                        <LineBreak/>
+                                        <Run Text="• 自定义倒计时目标，主窗口自动显示最近一个的剩余时间"/>
+                                        <LineBreak/>
+                                        <Run Text="• 数据备份/还原（设置→关于→一键导出/恢复所有配置）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 课表栏内容切换淡入淡出 + 状态文本脉冲动画 + 全项目非线性动画统一"/>
+                                        <LineBreak/>
+                                        <Run Text="• 考试模式入场缩放弹入动画 · Tab 切换 0.3s 淡入淡出消除重影"/>
+                                        <LineBreak/>
+                                        <Run Text="• GitHub Actions 自动构建发布到 Release / 非代码提交跳过构建"/>
+                                        <LineBreak/>
                                         <Run Text="• 课表改为课程表网格视图（横向星期、纵向时段），支持时段模板管理"/>
                                         <LineBreak/>
                                         <Run Text="• 调休功能，一键复制某天课表到另一天"/>
