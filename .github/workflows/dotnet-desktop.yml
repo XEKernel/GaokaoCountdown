@@ -1,13 +1,23 @@
-name: Build
+name: Build & Release
 
 on:
   push:
     branches: [ "main" ]
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'schedule_example.json'
+      - '.github/**'
+      - '.workbuddy/**'
+      - '.gitignore'
   pull_request:
     branches: [ "main" ]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -36,7 +46,25 @@ jobs:
       - name: Publish (Release x64)
         run: dotnet publish ${{ env.Project_Name }} -c Release -r win-x64 --self-contained true -o publish
 
+      - name: Pack zip
+        run: powershell Compress-Archive -Path publish\* -DestinationPath 学程-win-x64.zip
+
+      - name: Create Release & Upload
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: 学程 Latest
+          tag_name: latest
+          body: |
+            自动构建 · `${{ github.sha }}`
+            ${{ github.event.head_commit.message }}
+          files: 学程-win-x64.zip
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload artifact
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: 学程-win-x64
