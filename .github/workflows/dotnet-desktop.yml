@@ -74,8 +74,17 @@ jobs:
       - name: Verify signatures
         if: github.event_name == 'push'
         run: |
-          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /v "${{ env.Project_Directory }}\publish\学程.exe"
-          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /v "${{ env.Project_Directory }}\publish\学程.dll"
+          # 导入自签名根证书到受信存储（仅本次会话）
+          Import-PfxCertificate -FilePath "${{ env.Project_Directory }}\StudyJourney.pfx" -CertStoreLocation Cert:\LocalMachine\Root -Password (ConvertTo-SecureString -String "${{ secrets.PFX_PASSWORD }}" -AsPlainText -Force) -Exportable
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.exe"
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.dll"
+        shell: pwsh
+
+      - name: Remove from trusted root
+        if: always() && github.event_name == 'push'
+        run: |
+          $certs = Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -eq "CN=XEKernel, O=XEKernel, L=Anhui, C=CN" }
+          foreach ($c in $certs) { Remove-Item $c.PSPath -Force }
         shell: pwsh
 
       - name: Remove certificate
