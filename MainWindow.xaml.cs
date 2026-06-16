@@ -397,11 +397,22 @@ namespace GaokaoCountdown
             if (_examModeWindow != null) { _examModeWindow.Activate(); return; }
             if (_scheduleManager == null) return;
 
-            // 检查今天是否有考试，没有则不开窗
+            // 检查今天是否有考试
             var todayExams = _scheduleManager.GetTodayExams();
             if (todayExams.Count == 0)
             {
                 System.Windows.MessageBox.Show("今天没有安排考试。", "考试模式",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
+            // 检查当前是否在考试时段内（正在考或有下一场未考）
+            var now = DateTime.Now;
+            var cur  = _scheduleManager.GetCurrentExamSubject(now);
+            var next = _scheduleManager.GetNextExamSubject(now);
+            if (cur == null && next == null)
+            {
+                System.Windows.MessageBox.Show("今天的考试已全部结束。", "考试模式",
                     System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
                 return;
             }
