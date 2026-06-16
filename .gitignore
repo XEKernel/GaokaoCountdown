@@ -14,5 +14,10 @@ obj/
 Thumbs.db
 .DS_Store
 
+# Code signing
+StudyJourney.pfx
+*.pfx
+.pfx_base64.txt
+
 # WorkBuddy
 .workbuddy/

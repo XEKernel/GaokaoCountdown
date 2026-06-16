@@ -16,6 +16,13 @@
 		<AssemblyCompany>XEKernel</AssemblyCompany>
 	</PropertyGroup>
 
+	<!-- ── 代码签名配置 ────────────────────────────────────── -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
+		<SignCertificate>$(MSBuildProjectDirectory)\StudyJourney.pfx</SignCertificate>
+		<SignPassword Condition="'$(SignPassword)' == ''">StudyJourney2026!</SignPassword>
+		<SignTimestampUrl>http://timestamp.digicert.com</SignTimestampUrl>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<Content Include="icon.ico">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -23,5 +30,25 @@
 		<PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
 		<PackageReference Include="System.Drawing.Common" Version="9.0.9" />
 	</ItemGroup>
+
+	<!-- Release 构建后自动签名（需要 Windows SDK signtool.exe） -->
+	<Target Name="SignOutput" AfterTargets="AfterBuild" Condition="'$(Configuration)' == 'Release' And Exists('$(SignCertificate)')">
+		<Message Text="[Sign] 正在签名: $(TargetPath)" Importance="high" />
+		<Exec Command="signtool sign /fd SHA256 /f &quot;$(SignCertificate)&quot; /p $(SignPassword) /tr $(SignTimestampUrl) /td SHA256 /v &quot;$(TargetPath)&quot;"
+		      IgnoreExitCode="true" ContinueOnError="true">
+			<Output TaskParameter="ExitCode" PropertyName="SignExitCode" />
+		</Exec>
+		<Warning Condition="'$(SignExitCode)' != '0'" Text="本地签名失败(缺少 Windows SDK 或 signtool)，CI 构建将自动签名" />
+	</Target>
+
+	<Target Name="SignPublishOutput" AfterTargets="AfterPublish" Condition="'$(Configuration)' == 'Release' And Exists('$(SignCertificate)')">
+		<Message Text="[Sign] 正在签名发布输出: $(PublishDir)" Importance="high" />
+		<Exec Command="signtool sign /fd SHA256 /f &quot;$(SignCertificate)&quot; /p $(SignPassword) /tr $(SignTimestampUrl) /td SHA256 /v &quot;$(PublishDir)学程.exe&quot;"
+		      IgnoreExitCode="true" ContinueOnError="true">
+			<Output TaskParameter="ExitCode" PropertyName="SignExitCode2" />
+		</Exec>
+		<Exec Command="signtool sign /fd SHA256 /f &quot;$(SignCertificate)&quot; /p $(SignPassword) /tr $(SignTimestampUrl) /td SHA256 /v &quot;$(PublishDir)学程.dll&quot;"
+		      IgnoreExitCode="true" ContinueOnError="true" Condition="'$(SignExitCode2)' == '0'" />
+	</Target>
 
 </Project>

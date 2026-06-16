@@ -25,6 +25,7 @@ jobs:
     env:
       Solution_Name: 学程.sln
       Project_Name: 学程.csproj
+      Project_Directory: .
 
     steps:
       - name: Checkout
@@ -45,6 +46,43 @@ jobs:
 
       - name: Publish (Release x64)
         run: dotnet publish ${{ env.Project_Name }} -c Release -r win-x64 --self-contained true -o publish
+
+      # ── 代码签名 ──
+      - name: Import signing certificate
+        if: github.event_name == 'push'
+        run: |
+          $bytes = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_PFX }}")
+          [System.IO.File]::WriteAllBytes("${{ env.Project_Directory }}\StudyJourney.pfx", $bytes)
+        shell: pwsh
+
+      - name: Find signtool
+        if: github.event_name == 'push'
+        id: find_signtool
+        run: |
+          $sdk = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\10.*" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          $signtool = Join-Path $sdk.FullName "x64\signtool.exe"
+          echo "signtool_path=$signtool" >> $env:GITHUB_OUTPUT
+          Write-Host "signtool: $signtool"
+        shell: pwsh
+
+      - name: Sign binaries
+        if: github.event_name == 'push'
+        run: |
+          & "${{ steps.find_signtool.outputs.signtool_path }}" sign /fd SHA256 /f "${{ env.Project_Directory }}\StudyJourney.pfx" /p "${{ secrets.PFX_PASSWORD }}" /tr http://timestamp.digicert.com /td SHA256 /v "${{ env.Project_Directory }}\publish\学程.exe"
+          & "${{ steps.find_signtool.outputs.signtool_path }}" sign /fd SHA256 /f "${{ env.Project_Directory }}\StudyJourney.pfx" /p "${{ secrets.PFX_PASSWORD }}" /tr http://timestamp.digicert.com /td SHA256 /v "${{ env.Project_Directory }}\publish\学程.dll"
+        shell: pwsh
+
+      - name: Verify signatures
+        if: github.event_name == 'push'
+        run: |
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.exe"
+          & "${{ steps.find_signtool.outputs.signtool_path }}" verify /pa /v "${{ env.Project_Directory }}\publish\学程.dll"
+        shell: pwsh
+
+      - name: Remove certificate
+        if: always() && github.event_name == 'push'
+        run: Remove-Item -Path "${{ env.Project_Directory }}\StudyJourney.pfx" -Force -ErrorAction SilentlyContinue
+        shell: pwsh
 
       - name: Pack zip
         run: powershell Compress-Archive -Path publish\* -DestinationPath 学程-win-x64.zip
