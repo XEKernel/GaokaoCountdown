@@ -79,7 +79,7 @@
 ### 运行
 
 ```bash
-git clone https://github.com/SYSTEM-MEMZ-XEK/GaokaoCountdown.git
+git clone https://github.com/XEKernel/StudyJourney.git
 cd 学程
 dotnet run
 ```

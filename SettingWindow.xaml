@@ -1365,10 +1365,10 @@
                                         <TextBlock Margin="0,8,0,0">
                                             <Hyperlink FontSize="12" Foreground="#FF6688CC"
                                                        TextDecorations="Underline"
-                                                       NavigateUri="https://github.com/SYSTEM-MEMZ-XEK/GaokaoCountdown"
+                                                       NavigateUri="https://github.com/XEKernel/StudyJourney"
                                                        ToolTip="在浏览器中打开 GitHub 仓库"
                                                        RequestNavigate="GitHubLink_RequestNavigate">
-                                                 SYSTEM-MEMZ-XEK / GaokaoCountdown
+                                                 XEKernel / StudyJourney
                                             </Hyperlink>
                                         </TextBlock>
                                     </StackPanel>
