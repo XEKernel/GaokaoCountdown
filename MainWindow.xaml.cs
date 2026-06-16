@@ -396,6 +396,16 @@ namespace GaokaoCountdown
         {
             if (_examModeWindow != null) { _examModeWindow.Activate(); return; }
             if (_scheduleManager == null) return;
+
+            // 检查今天是否有考试，没有则不开窗
+            var todayExams = _scheduleManager.GetTodayExams();
+            if (todayExams.Count == 0)
+            {
+                System.Windows.MessageBox.Show("今天没有安排考试。", "考试模式",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
             // 进入考试模式时隐藏课表栏
             if (settings.ShowScheduleBar)
                 HideScheduleBarWindow();
