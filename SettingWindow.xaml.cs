@@ -1871,7 +1871,7 @@ namespace GaokaoCountdown
         private void ApplyTimeTemplate_Click(object sender, RoutedEventArgs e)
         {
             var sm = _mainWindow.GetScheduleManager();
-            if (sm?.Data?.TimeTemplates.Count == 0) return;
+            if (sm?.Data?.TimeTemplates == null || sm.Data.TimeTemplates.Count == 0) return;
             sm.Save();
             RefreshTimetable();
             ScheduleStatusTb.Text += "  ✅ 已应用时段模板";
