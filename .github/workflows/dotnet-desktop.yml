@@ -93,7 +93,7 @@ jobs:
         shell: pwsh
 
       - name: Pack zip
-        run: powershell Compress-Archive -Path publish\* -DestinationPath 学程-win-x64.zip
+        run: powershell Compress-Archive -Path publish\* -DestinationPath StudyJourney-win-x64.zip
 
       - name: Create Release & Upload
         if: github.event_name == 'push'
@@ -104,7 +104,7 @@ jobs:
           body: |
             自动构建 · `${{ github.sha }}`
             ${{ github.event.head_commit.message }}
-          files: 学程-win-x64.zip
+          files: StudyJourney-win-x64.zip
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -113,5 +113,5 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
-          name: 学程-win-x64
+          name: StudyJourney-win-x64
           path: publish/
