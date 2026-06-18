@@ -1809,6 +1809,7 @@ namespace GaokaoCountdown
             TimetableGrid.ItemsSource = null;
             TimetableGrid.ItemsSource = BuildTimetableRows();
             RefreshTimetableStatus();
+            PopulateSwapCombos();
         }
 
         private void RefreshTimetableStatus()
@@ -2006,6 +2007,40 @@ namespace GaokaoCountdown
             RefreshTimetable();
             SaveTimetableToEntries(rows);
             ScheduleStatusTb.Text = $"  ✅ 已移动「{src.Display}」→「{tgt.Display}」";
+        }
+
+        /// <summary>代课/替换：目标被源课程覆盖，源不变（老师有事其他老师代课）</summary>
+        private void SubstituteCourse_Click(object sender, RoutedEventArgs e)
+        {
+            if (SwapSourceCb.SelectedItem is not CourseSlot src ||
+                SwapTargetCb.SelectedItem is not CourseSlot tgt) return;
+
+            if (src.RowIndex == tgt.RowIndex && src.DayIndex == tgt.DayIndex)
+            {
+                ScheduleStatusTb.Text = "⚠ 源和目标相同，无需替换";
+                return;
+            }
+
+            if (src.IsEmpty)
+            {
+                ScheduleStatusTb.Text = "⚠ 请选择有课程的位置作为来源";
+                return;
+            }
+
+            string info = tgt.IsEmpty
+                ? $"由「{src.Subject}」代课"
+                : $"「{src.Subject}」代课，原「{tgt.Subject}」取消";
+
+            var r = WpfMessageBox.Show(
+                $"{src.DayName} {src.TimeLabel} 的「{src.Subject}」老师\n到 {tgt.DayName} {tgt.TimeLabel} 代课？\n\n{info}",
+                "调课·代课", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r != MessageBoxResult.Yes) return;
+
+            if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return;
+            rows[tgt.RowIndex][tgt.DayIndex] = src.Subject;
+            RefreshTimetable();
+            SaveTimetableToEntries(rows);
+            ScheduleStatusTb.Text = $"  ✅ 「{src.Subject}」代课到「{tgt.DayName} {tgt.TimeLabel}」";
         }
 
         private void SaveSchedule_Click(object sender, RoutedEventArgs e)

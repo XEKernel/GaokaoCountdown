@@ -1782,6 +1782,9 @@
                                         <Button Content="移动" Click="MoveCourse_Click"
                                                 Width="52" Margin="4,0,0,0" Background="#338866CC"
                                                 ToolTip="将源课程移至目标位置，源位置清空"/>
+                                        <Button Content="代课" Click="SubstituteCourse_Click"
+                                                Width="52" Margin="4,0,0,0" Background="#33CC6688"
+                                                ToolTip="目标被替换为源课程（代课/调课），源不变"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
