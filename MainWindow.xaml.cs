@@ -360,6 +360,17 @@ namespace GaokaoCountdown
                 return;
             }
 
+            // ExamEndSoon 使用覆盖层
+            if (e.Type == ReminderType.ExamEndSoon)
+            {
+                // 从 Message 中提取科目名（格式："XXX 还有 15 分钟结束，注意检查"）
+                string subject = e.Message;
+                int idx = subject.IndexOf(" 还有");
+                if (idx > 0) subject = subject.Substring(0, idx);
+                ClassOverlayWindow.ShowExamReminder(subject, 15);
+                return;
+            }
+
             // 其他提醒：使用右下角 ReminderWindow
             ReminderWindow.Show(e.Title, e.Message, e.Type);
 

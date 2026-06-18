@@ -115,7 +115,15 @@ namespace GaokaoCountdown
             win.Show();
         }
 
-        /// <summary>更新已有窗口的倒计时数字</summary>
+        /// <summary>考试还有 X 分钟提醒</summary>
+        public static void ShowExamReminder(string subject, int minutesLeft)
+        {
+            var win = new ClassOverlayWindow(
+                $"还有 {minutesLeft} 分钟",
+                $"{subject} 即将结束，注意检查",
+                autoClose: true);
+            win.Show();
+        }
         public void UpdateCountdown(int remainingSeconds)
         {
             if (_isClosing) return;
