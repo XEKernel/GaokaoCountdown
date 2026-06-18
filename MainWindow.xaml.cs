@@ -334,13 +334,50 @@ namespace GaokaoCountdown
             }
         }
 
+        private ClassOverlayWindow? _classEndSoonOverlay;
+
         private void OnReminder(object? sender, ReminderEventArgs e)
         {
-            // 自定义提醒窗口（右下角滑入）
+            // ClassEndSoon / ClassEnd 使用大字覆盖层，不弹右下角提醒窗
+            if (e.Type == ReminderType.ClassEndSoon)
+            {
+                // 打开倒计时覆盖层，后续 Countdown60Tick 每秒更新
+                _classEndSoonOverlay = ClassOverlayWindow.ShowCountdown(60);
+                // 订阅倒计时更新
+                if (_reminderService != null)
+                    _reminderService.Countdown60Tick += OnClassCountdownTick;
+                return;
+            }
+
+            if (e.Type == ReminderType.ClassEnd)
+            {
+                // 关闭倒计时覆盖层，显示"下课"大字
+                _classEndSoonOverlay?.Close();
+                _classEndSoonOverlay = null;
+                if (_reminderService != null)
+                    _reminderService.Countdown60Tick -= OnClassCountdownTick;
+                ClassOverlayWindow.ShowClassEnd();
+                return;
+            }
+
+            // 其他提醒：使用右下角 ReminderWindow
             ReminderWindow.Show(e.Title, e.Message, e.Type);
 
             // 触发课表栏临时展开（提醒时显示完整信息）
             _scheduleBarWindow?.ExpandOnReminder(e.Type);
+        }
+
+        private void OnClassCountdownTick(object? sender, int remaining)
+        {
+            if (_classEndSoonOverlay == null) return;
+            if (remaining > 0)
+                _classEndSoonOverlay.UpdateCountdown(remaining);
+            else
+            {
+                _classEndSoonOverlay?.Close();
+                _classEndSoonOverlay = null;
+                _reminderService!.Countdown60Tick -= OnClassCountdownTick;
+            }
         }
 
         // ── 课表栏窗口管理 ────────────────────────────────────

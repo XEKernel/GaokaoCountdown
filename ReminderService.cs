@@ -199,8 +199,9 @@ namespace GaokaoCountdown
 
         private void FireReminder(ReminderType type, string title, string message)
         {
-            // 播放声音
-            PlaySound();
+            // ClassEndSoon / ClassEnd 使用大字覆盖层，不播放声音
+            if (type != ReminderType.ClassEndSoon && type != ReminderType.ClassEnd)
+                PlaySound();
 
             // 发出事件（UI 订阅者通过 ReminderWindow 显示自定义通知）
             Reminder?.Invoke(this, new ReminderEventArgs(type, title, message));
