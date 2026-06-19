@@ -101,6 +101,10 @@ namespace GaokaoCountdown
                     // 允许后续 Tab 切换动画
                     _isInitializing = false;
 
+                    // 折叠除第一个外的所有页面，防止首次切换重影
+                    for (int i = 1; i < _tabContents.Length; i++)
+                        SnapCollapse(_tabContents[i]);
+
                     // 手动给第一个已选中的 Tab 做入场（默认从右侧滑入）
                     if (_enableSettingsAnimations && TabSidebar.SelectedIndex >= 0)
                     {
@@ -196,6 +200,21 @@ namespace GaokaoCountdown
             int oldIndex = oldItem != null ? TabSidebar.Items.IndexOf(oldItem) : -1;
             int newIndex = TabSidebar.Items.IndexOf(newItem);
             if (newIndex < 0 || newIndex >= _tabContents.Length) return;
+
+            // 首次点击（无旧选择）：折叠所有其他页面，只展示新页
+            if (oldIndex < 0)
+            {
+                for (int i = 0; i < _tabContents.Length; i++)
+                {
+                    if (i != newIndex) SnapCollapse(_tabContents[i]);
+                    else _tabContents[i].Visibility = Visibility.Visible;
+                }
+                if (!_enableSettingsAnimations) return;
+                // 有动画时仍需做入场
+                double w0 = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
+                SlideIn(_tabContents[newIndex], 1, w0);
+                return;
+            }
 
             // 无动画：直接切换可见性
             if (!_enableSettingsAnimations)
