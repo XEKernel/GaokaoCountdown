@@ -1332,7 +1332,7 @@
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                             <TextBlock Text="学程" FontSize="20" FontWeight="Bold"
                                                        Foreground="#FFFFFFFF"/>
-                                            <TextBlock Text="  v1.3" FontSize="13"
+                                            <TextBlock Text="  v1.4" FontSize="13"
                                                        Foreground="#6688CCAA" VerticalAlignment="Bottom"
                                                        Margin="4,0,0,3"/>
                                         </StackPanel>
@@ -1356,7 +1356,7 @@
                                                 <ColumnDefinition Width="*"/>
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="版本" FontSize="12" Foreground="#66CCCCDD"/>
-                                            <TextBlock Grid.Column="1" Text="1.3"
+                                            <TextBlock Grid.Column="1" Text="1.4"
                                                        FontSize="13" Foreground="#AACCDDEE"/>
                                         </Grid>
 
@@ -1453,9 +1453,11 @@
                                         <LineBreak/>
                                         <Run Text="&#x1F4DD; 考试全屏倒计时，科目剩余时间/进度/下一场可视化，蜂鸣提醒+确认退出"/>
                                         <LineBreak/>
-                                        <Run Text="&#x1F4C5; 课表栏（课程表网格），自动收缩+展开按钮+放学显示明天+调休功能"/>
+                                        <Run Text="&#x1F4C5; 课表栏（课程表网格），自动收缩+展开按钮+放学显示明天+调休+调课+代课"/>
                                         <LineBreak/>
                                         <Run Text="&#x2328; 全局快捷键（Ctrl+Shift+H/B/E），无需鼠标快速操作"/>
+                                        <LineBreak/>
+                                        <Run Text="&#x1F4E2; 下课倒计时大字覆盖层（距下课1分钟弹出，屏幕居中大字，下课提示），3秒消失"/>
                                         <LineBreak/>
                                         <Run Text="&#x2601; 实时天气（窗口 + 文本两种模式），支持城市名输入"/>
                                         <LineBreak/>
@@ -1484,6 +1486,30 @@
                             <Border Style="{StaticResource CardPanel}">
                                 <StackPanel>
                                     <TextBlock Text="&#x1F4CB;  更新日志" Style="{StaticResource SectionTitle}" Margin="0,0,0,8"/>
+                                    <TextBlock Text="v1.4" FontSize="13" FontWeight="SemiBold"
+                                               Foreground="#FF6688CC" Margin="0,0,0,4"/>
+                                    <TextBlock FontSize="11" Foreground="#88CCCCDD" TextWrapping="Wrap" LineHeight="18">
+                                        <Run Text="• 设置页 Tab 从横向改为纵向侧边栏（沿左边排列，方便扩展）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 下课/考试结束前覆盖层大字提醒（屏幕居中，距下课1分钟+考试15分，3秒消失）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 课表调课功能：点击格子直接选源/目标，支持交换/移动/代课三种模式"/>
+                                        <LineBreak/>
+                                        <Run Text="• 代码签名（自签名证书，CI 自动签名并验签）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 修复上课/下课时间边界重叠 Bug（8:45 不再同时匹配两节课）"/>
+                                        <LineBreak/>
+                                        <Run Text="• 修复 JSON 配置文件损坏时静默丢失数据 → 备份+弹窗提示"/>
+                                        <LineBreak/>
+                                        <Run Text="• 修复颜色 Hex 值异常导致启动崩溃"/>
+                                        <LineBreak/>
+                                        <Run Text="• 修复签名密码硬编码泄露 → 环境变量"/>
+                                        <LineBreak/>
+                                        <Run Text="• 架构优化：WeatherService 独立共享类 / SettingWindow 拆分 Core+Schedule partial"/>
+                                        <LineBreak/>
+                                        <Run Text="• CI 产物文件名改为英文 StudyJourney-win-x64.zip"/>
+                                    </TextBlock>
+                                    <Separator Background="#15FFFFFF" Margin="0,8,0,4"/>
                                     <TextBlock Text="v1.3" FontSize="13" FontWeight="SemiBold"
                                                Foreground="#FF6688CC" Margin="0,0,0,4"/>
                                     <TextBlock FontSize="11" Foreground="#88CCCCDD" TextWrapping="Wrap" LineHeight="18">
