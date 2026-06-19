@@ -1809,7 +1809,6 @@ namespace GaokaoCountdown
             TimetableGrid.ItemsSource = null;
             TimetableGrid.ItemsSource = BuildTimetableRows();
             RefreshTimetableStatus();
-            PopulateSwapCombos();
         }
 
         private void RefreshTimetableStatus()
@@ -1898,149 +1897,169 @@ namespace GaokaoCountdown
         }
 
         // ══════════════════════════════════════════════════════
-        //  调课 — 课程格子交换/移动
+        //  调课 — 点击课程表格子选择源/目标
         // ══════════════════════════════════════════════════════
 
-        /// <summary>从当前课程表网格构建所有可选的课程槽位</summary>
-        private List<CourseSlot> GetTimetableSlots()
+        private CourseSlot? _swapSource;
+        private CourseSlot? _swapTarget;
+
+        /// <summary>获取指定单元格的课程槽位</summary>
+        private CourseSlot? GetSlotAt(int rowIndex, int colIndex)
         {
-            if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return new();
-            var slots = new List<CourseSlot>();
-            for (int r = 0; r < rows.Count; r++)
+            if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return null;
+            if (rowIndex < 0 || rowIndex >= rows.Count) return null;
+            int dayIndex = colIndex - 1; // col 0 = 时段, col 1..7 = 周一..周日
+            if (dayIndex < 0 || dayIndex >= 7) return null;
+            return new CourseSlot
             {
-                for (int d = 0; d < 7; d++)
-                {
-                    slots.Add(new CourseSlot
-                    {
-                        RowIndex = r,
-                        DayIndex = d,
-                        Subject = rows[r][d],
-                        TimeLabel = rows[r].TimeLabel,
-                        DayName = _dayNames[d]
-                    });
-                }
+                RowIndex = rowIndex,
+                DayIndex = dayIndex,
+                Subject = rows[rowIndex][dayIndex],
+                TimeLabel = rows[rowIndex].TimeLabel,
+                DayName = _dayNames[dayIndex]
+            };
+        }
+
+        /// <summary>点击表格格子选择源或目标</summary>
+        private void TimetableGrid_SelectedCellsChanged(object sender, System.Windows.Controls.SelectedCellsChangedEventArgs e)
+        {
+            if (TimetableGrid.SelectedCells.Count == 0) return;
+            var cell = TimetableGrid.SelectedCells[0];
+            var slot = GetSlotAt(
+                TimetableGrid.Items.IndexOf(cell.Item),
+                cell.Column?.DisplayIndex ?? 0);
+            if (slot == null) return;
+
+            if (_swapSource == null)
+            {
+                _swapSource = slot;
+                SwapSourceLb.Text = $"源：{slot.Display}";
+                SwapTargetLb.Text = "目标：未选择";
+                SwapHintTb.Text = $"已选源「{slot.Subject}」→ 再点一个格子选目标";
             }
-            return slots;
+            else
+            {
+                _swapTarget = slot;
+                SwapTargetLb.Text = $"目标：{slot.Display}";
+                SwapHintTb.Text = !slot.IsEmpty
+                    ? $"源「{_swapSource.Subject}」→ 目标「{slot.Subject}」— 点按钮执行"
+                    : $"源「{_swapSource.Subject}」→ 目标空位 — 点按钮执行";
+            }
         }
 
-        /// <summary>刷新调课 ComboBox 数据源</summary>
-        private void PopulateSwapCombos()
+        private void ClearSwapSelection_Click(object sender, RoutedEventArgs e)
         {
-            var slots = GetTimetableSlots();
-            SwapSourceCb.ItemsSource = null;
-            SwapSourceCb.ItemsSource = slots;
-            SwapSourceCb.DisplayMemberPath = "Display";
-            SwapTargetCb.ItemsSource = null;
-            SwapTargetCb.ItemsSource = slots;
-            SwapTargetCb.DisplayMemberPath = "Display";
-        }
-
-        private void SwapSource_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            // 源变化时，目标自动选同一节次的下一个位置
-            if (SwapSourceCb.SelectedItem is CourseSlot src && src.IsEmpty)
-                ScheduleStatusTb.Text = "⚠ 源位置是空的，请选择有课程的位置";
+            _swapSource = null;
+            _swapTarget = null;
+            SwapSourceLb.Text = "源：未选择";
+            SwapTargetLb.Text = "目标：未选择";
+            SwapHintTb.Text = "已清除 — 点击格子重新选择";
         }
 
         /// <summary>交换两节课</summary>
         private void SwapCourses_Click(object sender, RoutedEventArgs e)
         {
-            if (SwapSourceCb.SelectedItem is not CourseSlot src ||
-                SwapTargetCb.SelectedItem is not CourseSlot tgt) return;
+            if (!ValidateSwapSelection()) return;
 
-            if (src.RowIndex == tgt.RowIndex && src.DayIndex == tgt.DayIndex)
+            if (_swapSource!.IsEmpty && _swapTarget!.IsEmpty)
             {
-                ScheduleStatusTb.Text = "⚠ 源和目标不能相同";
-                return;
-            }
-
-            if (src.IsEmpty && tgt.IsEmpty)
-            {
-                ScheduleStatusTb.Text = "⚠ 两个位置都是空的，无需交换";
+                SwapHintTb.Text = "⚠ 两个位置都是空的，无需交换";
                 return;
             }
 
             var r = WpfMessageBox.Show(
-                $"交换「{src.Display}」↔「{tgt.Display}」？",
+                $"交换「{_swapSource!.Display}」↔「{_swapTarget!.Display}」？",
                 "调课·交换", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (r != MessageBoxResult.Yes) return;
 
             if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return;
-            string tmp = rows[src.RowIndex][src.DayIndex];
-            rows[src.RowIndex][src.DayIndex] = rows[tgt.RowIndex][tgt.DayIndex];
-            rows[tgt.RowIndex][tgt.DayIndex] = tmp;
+            string tmp = rows[_swapSource.RowIndex][_swapSource.DayIndex];
+            rows[_swapSource.RowIndex][_swapSource.DayIndex] = rows[_swapTarget.RowIndex][_swapTarget.DayIndex];
+            rows[_swapTarget.RowIndex][_swapTarget.DayIndex] = tmp;
             RefreshTimetable();
             SaveTimetableToEntries(rows);
-            ScheduleStatusTb.Text = $"  ✅ 已交换「{src.Display}」↔「{tgt.Display}」";
+            ClearSwapSelection();
+            ScheduleStatusTb.Text = $"  ✅ 已交换";
         }
 
-        /// <summary>移动课程到目标位置（源位置清空，目标原有内容丢失）</summary>
+        /// <summary>移动课程到目标位置（源清空，目标原有内容丢失）</summary>
         private void MoveCourse_Click(object sender, RoutedEventArgs e)
         {
-            if (SwapSourceCb.SelectedItem is not CourseSlot src ||
-                SwapTargetCb.SelectedItem is not CourseSlot tgt) return;
+            if (!ValidateSwapSelection()) return;
 
-            if (src.RowIndex == tgt.RowIndex && src.DayIndex == tgt.DayIndex)
+            if (_swapSource!.IsEmpty)
             {
-                ScheduleStatusTb.Text = "⚠ 源和目标相同，无需移动";
+                SwapHintTb.Text = "⚠ 源位置是空的，请选有课程的位置";
                 return;
             }
 
-            if (src.IsEmpty)
-            {
-                ScheduleStatusTb.Text = "⚠ 源位置是空的，请选择有课程的位置";
-                return;
-            }
-
-            string warn = !tgt.IsEmpty
-                ? $"\n\n目标位置「{tgt.Display}」将被覆盖！"
+            string warn = !_swapTarget!.IsEmpty
+                ? $"\n\n目标「{_swapTarget.Display}」将被覆盖！"
                 : "";
 
             var r = WpfMessageBox.Show(
-                $"将「{src.Display}」移动到「{tgt.Display}」？{warn}",
+                $"将「{_swapSource.Display}」移动到「{_swapTarget.Display}」？{warn}",
                 "调课·移动", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (r != MessageBoxResult.Yes) return;
 
             if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return;
-            rows[tgt.RowIndex][tgt.DayIndex] = rows[src.RowIndex][src.DayIndex];
-            rows[src.RowIndex][src.DayIndex] = "";
+            rows[_swapTarget.RowIndex][_swapTarget.DayIndex] = rows[_swapSource.RowIndex][_swapSource.DayIndex];
+            rows[_swapSource.RowIndex][_swapSource.DayIndex] = "";
             RefreshTimetable();
             SaveTimetableToEntries(rows);
-            ScheduleStatusTb.Text = $"  ✅ 已移动「{src.Display}」→「{tgt.Display}」";
+            ClearSwapSelection();
+            ScheduleStatusTb.Text = $"  ✅ 已移动";
         }
 
-        /// <summary>代课/替换：目标被源课程覆盖，源不变（老师有事其他老师代课）</summary>
+        /// <summary>代课/替换：目标被源课程覆盖，源不变</summary>
         private void SubstituteCourse_Click(object sender, RoutedEventArgs e)
         {
-            if (SwapSourceCb.SelectedItem is not CourseSlot src ||
-                SwapTargetCb.SelectedItem is not CourseSlot tgt) return;
+            if (!ValidateSwapSelection()) return;
 
-            if (src.RowIndex == tgt.RowIndex && src.DayIndex == tgt.DayIndex)
+            if (_swapSource!.IsEmpty)
             {
-                ScheduleStatusTb.Text = "⚠ 源和目标相同，无需替换";
+                SwapHintTb.Text = "⚠ 请选有课程的位置作为来源";
                 return;
             }
 
-            if (src.IsEmpty)
-            {
-                ScheduleStatusTb.Text = "⚠ 请选择有课程的位置作为来源";
-                return;
-            }
-
-            string info = tgt.IsEmpty
-                ? $"由「{src.Subject}」代课"
-                : $"「{src.Subject}」代课，原「{tgt.Subject}」取消";
+            string info = _swapTarget!.IsEmpty
+                ? $"由「{_swapSource.Subject}」代课"
+                : $"「{_swapSource.Subject}」代课，原「{_swapTarget.Subject}」取消";
 
             var r = WpfMessageBox.Show(
-                $"{src.DayName} {src.TimeLabel} 的「{src.Subject}」老师\n到 {tgt.DayName} {tgt.TimeLabel} 代课？\n\n{info}",
+                $"{_swapSource.DayName} {_swapSource.TimeLabel} 的「{_swapSource.Subject}」老师\n到 {_swapTarget.DayName} {_swapTarget.TimeLabel} 代课？\n\n{info}",
                 "调课·代课", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (r != MessageBoxResult.Yes) return;
 
             if (TimetableGrid.ItemsSource is not List<TimetableRow> rows) return;
-            rows[tgt.RowIndex][tgt.DayIndex] = src.Subject;
+            rows[_swapTarget.RowIndex][_swapTarget.DayIndex] = _swapSource.Subject;
             RefreshTimetable();
             SaveTimetableToEntries(rows);
-            ScheduleStatusTb.Text = $"  ✅ 「{src.Subject}」代课到「{tgt.DayName} {tgt.TimeLabel}」";
+            ClearSwapSelection();
+            ScheduleStatusTb.Text = $"  ✅ 「{_swapSource.Subject}」代课到「{_swapTarget.DayName} {_swapTarget.TimeLabel}」";
+        }
+
+        private bool ValidateSwapSelection()
+        {
+            if (_swapSource == null || _swapTarget == null)
+            {
+                SwapHintTb.Text = "⚠ 先在课程表上点一个格子选源，再点一个格子选目标";
+                return false;
+            }
+            if (_swapSource.RowIndex == _swapTarget.RowIndex && _swapSource.DayIndex == _swapTarget.DayIndex)
+            {
+                SwapHintTb.Text = "⚠ 源和目标不能相同";
+                return false;
+            }
+            return true;
+        }
+
+        private void ClearSwapSelection()
+        {
+            _swapSource = null;
+            _swapTarget = null;
+            SwapSourceLb.Text = "源：未选择";
+            SwapTargetLb.Text = "目标：未选择";
         }
 
         private void SaveSchedule_Click(object sender, RoutedEventArgs e)

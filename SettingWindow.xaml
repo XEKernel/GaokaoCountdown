@@ -1714,7 +1714,8 @@
                                               HorizontalGridLinesBrush="#10FFFFFF"
                                               VerticalGridLinesBrush="#10FFFFFF"
                                               SelectionMode="Single" SelectionUnit="Cell"
-                                              CanUserResizeRows="False" EnableRowVirtualization="True">
+                                              CanUserResizeRows="False" EnableRowVirtualization="True"
+                                              SelectedCellsChanged="TimetableGrid_SelectedCellsChanged">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="时段" Width="80" Binding="{Binding TimeLabel}" IsReadOnly="True">
                                                 <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#88CCCCDD"/><Setter Property="FontSize" Value="10"/></Style></DataGridTextColumn.ElementStyle>
@@ -1766,27 +1767,39 @@
                                     </StackPanel>
 
                                     <!-- 调课工具栏 -->
-                                    <StackPanel x:Name="SwapPanel" Orientation="Horizontal" Margin="0,8,0,0">
-                                        <TextBlock Text="调课：" VerticalAlignment="Center" FontSize="12"
-                                                   Foreground="#88CCCCDD" Margin="0,0,6,0"/>
-                                        <ComboBox x:Name="SwapSourceCb" Width="170" Margin="0,0,4,0"
-                                                  ToolTip="选择要移动的课程"
-                                                  SelectionChanged="SwapSource_SelectionChanged"/>
-                                        <TextBlock Text="→" VerticalAlignment="Center" FontSize="12"
-                                                   Foreground="#88CCCCDD" Margin="0,0,4,0"/>
-                                        <ComboBox x:Name="SwapTargetCb" Width="170" Margin="0,0,6,0"
-                                                  ToolTip="选择目标位置"/>
-                                        <Button Content="交换" Click="SwapCourses_Click"
-                                                Width="52" Background="#336688CC"
-                                                ToolTip="交换两节课的位置"/>
-                                        <Button Content="移动" Click="MoveCourse_Click"
-                                                Width="52" Margin="4,0,0,0" Background="#338866CC"
-                                                ToolTip="将源课程移至目标位置，源位置清空"/>
-                                        <Button Content="代课" Click="SubstituteCourse_Click"
-                                                Width="52" Margin="4,0,0,0" Background="#33CC6688"
-                                                ToolTip="目标被替换为源课程（代课/调课），源不变"/>
-                                    </StackPanel>
+                                    <StackPanel Margin="0,8,0,0">
+                                        <TextBlock Text="调课：点击下方课程表格子选择源和目标" FontSize="11"
+                                                   Foreground="#66CCCCDD" Margin="0,0,0,4"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="#22FF8800" CornerRadius="3" Padding="4,2"
+                                                    MinWidth="100">
+                                                <TextBlock x:Name="SwapSourceLb" Text="源：未选择"
+                                                           FontSize="11" Foreground="#FF8800"/>
+                                            </Border>
+                                            <TextBlock Text=" → " VerticalAlignment="Center" FontSize="14"
+                                                       Foreground="#88CCCCDD" Margin="4,0"/>
+                                            <Border Background="#224488FF" CornerRadius="3" Padding="4,2"
+                                                    MinWidth="100">
+                                                <TextBlock x:Name="SwapTargetLb" Text="目标：未选择"
+                                                           FontSize="11" Foreground="#4488FF"/>
+                                            </Border>
+                                            <Button Content="交换" Click="SwapCourses_Click"
+                                                    Width="48" Margin="8,0,2,0" Background="#336688CC"
+                                                    ToolTip="交换两节课的位置"/>
+                                            <Button Content="移动" Click="MoveCourse_Click"
+                                                    Width="48" Margin="2,0,2,0" Background="#338866CC"
+                                                    ToolTip="将源课程移至目标位置，源清空"/>
+                                            <Button Content="代课" Click="SubstituteCourse_Click"
+                                                    Width="48" Margin="2,0,2,0" Background="#33CC6688"
+                                                    ToolTip="目标被替换为源课程（老师代课），源不变"/>
+                                            <Button Content="清除" Click="ClearSwapSelection_Click"
+                                                    Width="48" Margin="2,0,0,0" Background="#33552222"
+                                                    ToolTip="清除已选择的源/目标"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="SwapHintTb" FontSize="10" Foreground="#55CCCCDD"
+                                                   Margin="0,3,0,0" Text="操作提示："/>
                                 </StackPanel>
+                            </StackPanel>
                             </Border>
 
                             <TextBlock x:Name="ScheduleStatusTb" FontSize="12" Foreground="#88CCCCDD"
