@@ -1,6 +1,4 @@
 using System;
-using System.Net.Http;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -17,10 +15,6 @@ namespace GaokaoCountdown
         private DispatcherTimer? _timer;
         private DispatcherTimer? _weatherTimer;
 
-        private static readonly HttpClient _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(8)
-        };
         // ── 当前显示状态 ──────────────────────────────────────
         private string _currentSubjectName = string.Empty;
         private bool   _warnShown          = false;
@@ -356,30 +350,11 @@ namespace GaokaoCountdown
         {
             try
             {
-                string city = string.IsNullOrWhiteSpace(_settings.WeatherCity)
-                    ? "北京" : _settings.WeatherCity.Trim();
-                string adcode = (_settings.WeatherAdcode ?? "").Trim();
-                string url = $"https://uapis.cn/api/v1/misc/weather?city={Uri.EscapeDataString(city)}" +
-                             $"&adcode={Uri.EscapeDataString(adcode)}" +
-                             "&extended=false&forecast=false&hourly=false&minutely=false&indices=false&lang=zh";
-
-                var json = await _httpClient.GetStringAsync(url);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-
-                string rCity    = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : "";
-                string district = root.TryGetProperty("district", out var d) ? d.GetString() ?? "" : "";
-                string weather  = root.TryGetProperty("weather", out var w) ? w.GetString() ?? "" : "";
-                string wIcon    = root.TryGetProperty("weather_icon", out var wi) ? wi.GetString() ?? "" : "";
-                int temperature = root.TryGetProperty("temperature", out var t) && t.ValueKind == JsonValueKind.Number
-                    ? (int)t.GetDouble() : 0;
-
-                string location = !string.IsNullOrWhiteSpace(district) ? district
-                    : !string.IsNullOrWhiteSpace(rCity) ? rCity : city;
+                var result = await WeatherService.FetchAsync(_settings.WeatherCity, _settings.WeatherAdcode);
+                if (result == null) return;
 
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    // 应用天气字体大小
                     double weatherFs = _settings.WeatherFontSize;
                     if (weatherFs <= 0) weatherFs = 14;
                     W2IconTb.FontSize = weatherFs * 1.0;
@@ -387,16 +362,15 @@ namespace GaokaoCountdown
                     W2WeatherTb.FontSize = weatherFs * 0.86;
                     W2TempTb.FontSize = weatherFs * 0.93;
 
-                    // 应用天气颜色
                     W2CityTb.Foreground = ColorUtils.ParseColor(_settings.WeatherCityColor, "#FFFFFFFF");
                     W2WeatherTb.Foreground = ColorUtils.ParseColor(_settings.WeatherInfoColor, "#FFCCCCDD");
                     W2TempTb.Foreground = ColorUtils.ParseColor(_settings.WeatherTempColor, "#FFFF8844");
                     W2IconTb.Foreground = ColorUtils.ParseColor(_settings.WeatherIconColor, "#FFFFAA00");
 
-                    W2IconTb.Text = ColorUtils.GetWeatherEmoji(wIcon);
-                    W2CityTb.Text = location;
-                    W2WeatherTb.Text = weather;
-                    W2TempTb.Text = $"{temperature}°";
+                    W2IconTb.Text = ColorUtils.GetWeatherEmoji(result.WeatherIcon);
+                    W2CityTb.Text = result.Location;
+                    W2WeatherTb.Text = result.Weather;
+                    W2TempTb.Text = $"{result.Temperature}°";
                     WeatherRow2.Visibility = Visibility.Visible;
                 });
             }

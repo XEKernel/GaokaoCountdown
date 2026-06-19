@@ -666,48 +666,61 @@
                 </Grid>
             </Border>
 
-            <!-- ══════ TabControl（仅头部）+ 内容面板 ══════ -->
+            <!-- ══════ 纵向 Tab 侧边栏 + 内容区 ══════ -->
             <Grid Grid.Row="1">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="110"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- Tab 头部（仅 Header，无内容） -->
-                <TabControl Grid.Row="0" Background="Transparent" BorderThickness="0"
-                            Name="MainTabControl"
-                            SelectionChanged="MainTabControl_SelectionChanged"
-                            TabStripPlacement="Top">
-                    <TabControl.Template>
-                        <ControlTemplate TargetType="TabControl">
-                            <ScrollViewer HorizontalScrollBarVisibility="Hidden"
-                                         VerticalScrollBarVisibility="Disabled"
-                                         Background="Transparent"
-                                         CanContentScroll="False"
-                                         Padding="0">
-                                <StackPanel x:Name="HeaderPanel"
-                                            Orientation="Horizontal"
-                                            IsItemsHost="True"
-                                            Background="Transparent"
-                                            KeyboardNavigation.TabIndex="1"/>
-                            </ScrollViewer>
-                        </ControlTemplate>
-                    </TabControl.Template>
+                <!-- 左侧侧边栏 -->
+                <Border Grid.Column="0" Background="#0AFFFFFF"
+                        BorderBrush="#10FFFFFF" BorderThickness="0,0,1,0">
+                    <ListBox x:Name="TabSidebar"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             SelectionChanged="TabSidebar_SelectionChanged"
+                             Margin="0,8,0,0">
+                        <ListBox.Resources>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Foreground" Value="#88CCCCDD"/>
+                                <Setter Property="FontSize" Value="12"/>
+                                <Setter Property="Padding" Value="14,10"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="Bd" Background="Transparent"
+                                                    Padding="{TemplateBinding Padding}"
+                                                    CornerRadius="0">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#226688CC"/>
+                                                    <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                                                </Trigger>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#11FFFFFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.Resources>
+                        <ListBoxItem Content="🎨 外观" Tag="0"/>
+                        <ListBoxItem Content="📐 位置" Tag="1"/>
+                        <ListBoxItem Content="✏ 内容" Tag="2"/>
+                        <ListBoxItem Content="🔌 API"  Tag="3"/>
+                        <ListBoxItem Content="📋 课表" Tag="4"/>
+                        <ListBoxItem Content="📝 考试" Tag="5"/>
+                        <ListBoxItem Content="ℹ 关于" Tag="6"/>
+                    </ListBox>
+                </Border>
 
-                    <TabControl.Resources>
-                    </TabControl.Resources>
-
-                    <TabItem Header="&#x1F3A8; 外观" />
-                    <TabItem Header="&#x1F4D0; 位置" />
-                    <TabItem Header="&#x270F; 内容" />
-                    <TabItem Header="&#x1F50C; API" />
-                    <TabItem Header="&#x1F4CB; 课表" />
-                    <TabItem Header="&#x1F4DD; 考试" />
-                    <TabItem Header="&#x2139; 关于" />
-                </TabControl>
-
-                <!-- 内容面板（手动切换，支持出入场动画） -->
-                <Grid Grid.Row="1" Margin="8,-2,8,0" ClipToBounds="True" x:Name="ContentHost">
+                <!-- 右侧内容面板 -->
+                <Grid Grid.Column="1" Margin="4,0,8,0" ClipToBounds="True" x:Name="ContentHost">
                     <!-- ═══ TAB 0：外观 ═══ -->
                     <ScrollViewer x:Name="ContentAppearance" VerticalScrollBarVisibility="Auto" CanContentScroll="False"
                                   Visibility="Visible">

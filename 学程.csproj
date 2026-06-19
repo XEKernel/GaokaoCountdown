@@ -19,7 +19,7 @@
 	<!-- ── 代码签名配置 ────────────────────────────────────── -->
 	<PropertyGroup Condition="'$(Configuration)' == 'Release'">
 		<SignCertificate>$(MSBuildProjectDirectory)\StudyJourney.pfx</SignCertificate>
-		<SignPassword Condition="'$(SignPassword)' == ''">StudyJourney2026!</SignPassword>
+		<SignPassword Condition="'$(SignPassword)' == ''">$(SIGN_PASSWORD)</SignPassword>
 		<SignTimestampUrl>http://timestamp.digicert.com</SignTimestampUrl>
 	</PropertyGroup>
 

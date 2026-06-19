@@ -197,7 +197,19 @@ namespace GaokaoCountdown
                            ?? new ScheduleData();
                 }
             }
-            catch { /* 文件损坏时静默回退到空课表 */ }
+            catch (Exception ex)
+            {
+                // 备份损坏文件，然后删除原文件
+                try
+                {
+                    var bak = _schedulePath + ".corrupted." + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                    File.Copy(_schedulePath, bak, overwrite: true);
+                    File.Delete(_schedulePath);
+                    System.Diagnostics.Debug.WriteLine($"[ScheduleData] 已备份损坏文件: {bak}");
+                }
+                catch { }
+                throw new InvalidOperationException("课表文件已损坏。\n原文件已备份为 schedule.json.corrupted.*，当前使用空课表。\n" + ex.Message, ex);
+            }
             return new ScheduleData();
         }
 

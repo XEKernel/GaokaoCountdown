@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,11 +18,6 @@ namespace GaokaoCountdown
         private readonly ReminderService _reminder;
         private DispatcherTimer? _timer;
         private DispatcherTimer? _weatherTimer;
-
-        private static readonly HttpClient _httpClient = new HttpClient
-        {
-            Timeout = TimeSpan.FromSeconds(8)
-        };
 
         // ── Win32（点击穿透 + 定位）─────────────────────────────
         [DllImport("user32.dll")]
@@ -753,34 +746,11 @@ namespace GaokaoCountdown
         {
             try
             {
-                string city = string.IsNullOrWhiteSpace(_settings.WeatherCity)
-                    ? "北京" : _settings.WeatherCity.Trim();
-                string adcode = (_settings.WeatherAdcode ?? "").Trim();
-                string url = $"https://uapis.cn/api/v1/misc/weather?city={Uri.EscapeDataString(city)}" +
-                             $"&adcode={Uri.EscapeDataString(adcode)}" +
-                             "&extended=false&forecast=false&hourly=false&minutely=false&indices=false&lang=zh";
-
-                var json = await _httpClient.GetStringAsync(url);
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-
-                string rCity     = root.TryGetProperty("city", out var c) ? c.GetString() ?? "" : "";
-                string district  = root.TryGetProperty("district", out var d) ? d.GetString() ?? "" : "";
-                string weather   = root.TryGetProperty("weather", out var w) ? w.GetString() ?? "" : "";
-                string wIcon     = root.TryGetProperty("weather_icon", out var wi) ? wi.GetString() ?? "" : "";
-                int temperature  = root.TryGetProperty("temperature", out var t) && t.ValueKind == JsonValueKind.Number
-                    ? (int)t.GetDouble() : 0;
-                string windDir   = root.TryGetProperty("wind_direction", out var wd) ? wd.GetString() ?? "" : "";
-                string windPower = root.TryGetProperty("wind_power", out var wp) ? wp.GetString() ?? "" : "";
-                int humidity     = root.TryGetProperty("humidity", out var h) && h.ValueKind == JsonValueKind.Number
-                    ? (int)h.GetDouble() : 0;
-
-                string location = !string.IsNullOrWhiteSpace(district) ? district
-                    : !string.IsNullOrWhiteSpace(rCity) ? rCity : city;
+                var result = await WeatherService.FetchAsync(_settings.WeatherCity, _settings.WeatherAdcode);
+                if (result == null) return;
 
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    // 应用天气字体大小
                     double weatherFs = _settings.WeatherFontSize;
                     if (weatherFs <= 0) weatherFs = 14;
                     WeatherIconTb.FontSize = weatherFs * 0.86;
@@ -790,7 +760,6 @@ namespace GaokaoCountdown
                     WeatherWindTb.FontSize = weatherFs * 0.65;
                     WeatherHumidityTb.FontSize = weatherFs * 0.65;
 
-                    // 应用天气颜色
                     WeatherCityTb.Foreground = ColorUtils.ParseColor(_settings.WeatherCityColor, "#FFFFFFFF");
                     WeatherTb.Foreground = ColorUtils.ParseColor(_settings.WeatherInfoColor, "#FFCCCCDD");
                     WeatherWindTb.Foreground = ColorUtils.ParseColor(_settings.WeatherInfoColor, "#FFCCCCDD");
@@ -798,13 +767,13 @@ namespace GaokaoCountdown
                     WeatherTempTb.Foreground = ColorUtils.ParseColor(_settings.WeatherTempColor, "#FFFF8844");
                     WeatherIconTb.Foreground = ColorUtils.ParseColor(_settings.WeatherIconColor, "#FFFFAA00");
 
-                    WeatherIconTb.Text = ColorUtils.GetWeatherEmoji(wIcon);
-                    WeatherCityTb.Text = location;
-                    WeatherTb.Text = weather;
-                    WeatherTempTb.Text = $"{temperature}°";
-                    WeatherWindTb.Text = !string.IsNullOrWhiteSpace(windDir)
-                        ? $"{windDir} {windPower}".Trim() : "--";
-                    WeatherHumidityTb.Text = humidity > 0 ? $"{humidity}%" : "--";
+                    WeatherIconTb.Text = ColorUtils.GetWeatherEmoji(result.WeatherIcon);
+                    WeatherCityTb.Text = result.Location;
+                    WeatherTb.Text = result.Weather;
+                    WeatherTempTb.Text = $"{result.Temperature}°";
+                    WeatherWindTb.Text = !string.IsNullOrWhiteSpace(result.WindDirection)
+                        ? $"{result.WindDirection} {result.WindPower}".Trim() : "--";
+                    WeatherHumidityTb.Text = result.Humidity > 0 ? $"{result.Humidity}%" : "--";
                     if (WeatherRow.Visibility != Visibility.Visible)
                     {
                         WeatherRow.Visibility = Visibility.Visible;

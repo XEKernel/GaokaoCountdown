@@ -43,7 +43,7 @@ namespace GaokaoCountdown
             var dt = now ?? DateTime.Now;
             var tod = dt.TimeOfDay;
             return GetTodayEntries(dt.Date)
-                .FirstOrDefault(e => tod >= e.StartTime && tod <= e.EndTime);
+                .FirstOrDefault(e => tod >= e.StartTime && tod < e.EndTime);
         }
 
         /// <summary>获取下一节课（当前时间之后，今天还没开始的最近一节），无则返回 null</summary>
@@ -107,7 +107,7 @@ namespace GaokaoCountdown
             foreach (var exam in GetTodayExams(dt.Date))
             {
                 var sub = exam.Subjects
-                    .FirstOrDefault(s => tod >= s.StartTime && tod <= s.EndTime);
+                    .FirstOrDefault(s => tod >= s.StartTime && tod < s.EndTime);
                 if (sub != null) return (exam, sub);
             }
             return null;

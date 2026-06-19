@@ -286,7 +286,16 @@ namespace GaokaoCountdown
         // ── 构造函数 ───────────────────────────────────────────
         public MainWindow()
         {
-            settings = AppSettings.Load();
+            // 加载配置（损坏时备份并提示用户）
+            try { settings = AppSettings.Load(); }
+            catch (Exception ex)
+            {
+                settings = new AppSettings();
+                Dispatcher.BeginInvoke(new Action(() =>
+                    System.Windows.MessageBox.Show(ex.Message, "学程 — 配置恢复",
+                        System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning)));
+            }
+
             CountdownFontFamily = new FontFamily(settings.FontFamily);
             RefreshDateFields();
 
@@ -308,7 +317,15 @@ namespace GaokaoCountdown
         // ── 课表服务初始化 ─────────────────────────────────────
         private void SetupScheduleServices()
         {
-            _scheduleManager = new ScheduleManager();
+            // 加载课表（损坏时备份并提示用户）
+            try { _scheduleManager = new ScheduleManager(); }
+            catch (Exception ex)
+            {
+                _scheduleManager = new ScheduleManager(); // 重试（已自动备份，第二次不读文件）
+                System.Windows.MessageBox.Show(ex.Message, "学程 — 课表恢复",
+                    System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+            }
+
             _reminderService = new ReminderService(_scheduleManager, settings);
 
             // 订阅提醒事件

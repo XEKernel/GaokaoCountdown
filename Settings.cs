@@ -48,19 +48,19 @@ namespace GaokaoCountdown
         public string NumberColorHex
         {
             get => NumberColor.ToString();
-            set => NumberColor = (Color)ColorConverter.ConvertFromString(value);
+            set { try { NumberColor = (Color)ColorConverter.ConvertFromString(value); } catch { } }
         }
 
         public string TextColorHex
         {
             get => TextColor.ToString();
-            set => TextColor = (Color)ColorConverter.ConvertFromString(value);
+            set { try { TextColor = (Color)ColorConverter.ConvertFromString(value); } catch { } }
         }
 
         public string ProgressBarColorHex
         {
             get => ProgressBarColor.ToString();
-            set => ProgressBarColor = (Color)ColorConverter.ConvertFromString(value);
+            set { try { ProgressBarColor = (Color)ColorConverter.ConvertFromString(value); } catch { } }
         }
 
         // ── 显示选项 ─────────────────────────────────────────
@@ -219,9 +219,18 @@ namespace GaokaoCountdown
                     string json = File.ReadAllText(SettingsPath);
                     return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    return new AppSettings();
+                    // 备份损坏文件，然后删除原文件
+                    try
+                    {
+                        var bak = SettingsPath + ".corrupted." + DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                        File.Copy(SettingsPath, bak, overwrite: true);
+                        File.Delete(SettingsPath);
+                        System.Diagnostics.Debug.WriteLine($"[AppSettings] 已备份损坏文件: {bak}");
+                    }
+                    catch { }
+                    throw new InvalidOperationException("设置文件已损坏。\n原文件已备份为 settings.json.corrupted.*，当前使用默认设置。\n" + ex.Message, ex);
                 }
             }
             return new AppSettings();
