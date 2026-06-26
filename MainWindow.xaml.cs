@@ -351,61 +351,14 @@ namespace GaokaoCountdown
             }
         }
 
-        private ClassOverlayWindow? _classEndSoonOverlay;
-
         private void OnReminder(object? sender, ReminderEventArgs e)
         {
-            // ClassEndSoon / ClassEnd 使用大字覆盖层，不弹右下角提醒窗
-            if (e.Type == ReminderType.ClassEndSoon)
-            {
-                // 打开倒计时覆盖层，后续 Countdown60Tick 每秒更新
-                _classEndSoonOverlay = ClassOverlayWindow.ShowCountdown(60);
-                // 订阅倒计时更新
-                if (_reminderService != null)
-                    _reminderService.Countdown60Tick += OnClassCountdownTick;
-                return;
-            }
-
-            if (e.Type == ReminderType.ClassEnd)
-            {
-                // 关闭倒计时覆盖层，显示"下课"大字
-                _classEndSoonOverlay?.Close();
-                _classEndSoonOverlay = null;
-                if (_reminderService != null)
-                    _reminderService.Countdown60Tick -= OnClassCountdownTick;
-                ClassOverlayWindow.ShowClassEnd();
-                return;
-            }
-
-            // ExamEndSoon 使用覆盖层
-            if (e.Type == ReminderType.ExamEndSoon)
-            {
-                // 从 Message 中提取科目名（格式："XXX 还有 15 分钟结束，注意检查"）
-                string subject = e.Message;
-                int idx = subject.IndexOf(" 还有");
-                if (idx > 0) subject = subject.Substring(0, idx);
-                ClassOverlayWindow.ShowExamReminder(subject, 15);
-                return;
-            }
-
-            // 其他提醒：使用右下角 ReminderWindow
+            // 不再使用大字覆盖层——课表栏自己处理下课倒计时/提示
+            // 所有提醒统一使用右下角 ReminderWindow
             ReminderWindow.Show(e.Title, e.Message, e.Type);
 
             // 触发课表栏临时展开（提醒时显示完整信息）
             _scheduleBarWindow?.ExpandOnReminder(e.Type);
-        }
-
-        private void OnClassCountdownTick(object? sender, int remaining)
-        {
-            if (_classEndSoonOverlay == null) return;
-            if (remaining > 0)
-                _classEndSoonOverlay.UpdateCountdown(remaining);
-            else
-            {
-                _classEndSoonOverlay?.Close();
-                _classEndSoonOverlay = null;
-                _reminderService!.Countdown60Tick -= OnClassCountdownTick;
-            }
         }
 
         // ── 课表栏窗口管理 ────────────────────────────────────

@@ -616,11 +616,24 @@ namespace GaokaoCountdown
                             st.BeginAnimation(ScaleTransform.ScaleYProperty, scaleIn);
                         }
                     }
-                    Countdown60Tb.Text = $"下课倒计时 {remaining}s";
+
+                    // 30 秒时自动展开课表栏，高亮提示
+                    if (remaining <= 30 && remaining >= 28 && _isCompact)
+                    {
+                        SetExpanded();
+                        _expandTimer?.Stop();
+                        _expandTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+                        _expandTimer.Tick += AutoCompact;
+                        _expandTimer.Start();
+                        Countdown60Tb.Foreground = BrOrange;
+                    }
+
+                    Countdown60Tb.Text = remaining <= 30
+                        ? $"⏰ 还有 {remaining}s 下课！"
+                        : $"下课倒计时 {remaining}s";
                 }
                 else
                 {
-                    // 淡出后隐藏
                     if (Countdown60Panel.Visibility == Visibility.Visible)
                     {
                         var fadeOut = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(200))
@@ -635,6 +648,14 @@ namespace GaokaoCountdown
                     }
                 }
             });
+        }
+
+        private void AutoCompact(object? sender, EventArgs e)
+        {
+            _expandTimer?.Stop();
+            _expandTimer = null;
+            var cur = _manager.GetCurrentEntry(DateTime.Now);
+            if (cur != null) SetCompact();
         }
 
         // ── 紧凑/展开模式（带动画过渡）───────────────────────
@@ -729,15 +750,8 @@ namespace GaokaoCountdown
 
             SetExpanded();
             _expandTimer?.Stop();
-            _expandTimer = null;
             _expandTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
-            _expandTimer.Tick += (_, _) =>
-            {
-                _expandTimer?.Stop();
-                _expandTimer = null;
-                var cur = _manager.GetCurrentEntry(DateTime.Now);
-                if (cur != null) SetCompact();
-            };
+            _expandTimer.Tick += AutoCompact;
             _expandTimer.Start();
         }
 
