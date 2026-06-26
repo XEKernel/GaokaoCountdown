@@ -107,8 +107,8 @@ namespace GaokaoCountdown
                     // 手动给第一个已选中的 Tab 做入场（默认从右侧滑入）
                     if (_enableSettingsAnimations && TabSidebar.SelectedIndex >= 0)
                     {
-                        double w = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
-                        SlideIn(_tabContents[TabSidebar.SelectedIndex], 1, w);
+                        double h = ContentHost.ActualHeight > 0 ? ContentHost.ActualHeight : 600;
+                        SlideIn(_tabContents[TabSidebar.SelectedIndex], 1, h);
                     }
                 }
                 catch
@@ -139,7 +139,7 @@ namespace GaokaoCountdown
                         if (sv == null) continue;
                         sv.BeginAnimation(UIElement.OpacityProperty, null);
                         if (sv.RenderTransform is TranslateTransform tt)
-                            tt.BeginAnimation(TranslateTransform.XProperty, null);
+                            tt.BeginAnimation(TranslateTransform.YProperty, null);
                     }
                 }
                 MainGrid.BeginAnimation(UIElement.OpacityProperty, null);
@@ -180,8 +180,8 @@ namespace GaokaoCountdown
         //
         //  核心思路：
         //  ContentHost 设 ClipToBounds=True，裁掉视口外内容。
-        //  新页面起始 X = ±ContentHost.ActualWidth，确保初始在视口外，
-        //  旧页面终止 X = ∓ContentHost.ActualWidth，移出视口后再折叠。
+        //  新页面起始 Y = ±ContentHost.ActualHeight，确保初始在视口外，
+        //  旧页面终止 Y = ∓ContentHost.ActualHeight，移出视口后再折叠。
         //  两个动画时长完全相同 → 看起来像两页并肩平移，零重影。
         //  不做 Opacity 淡入淡出，避免半透明叠加产生重影。
 
@@ -210,8 +210,8 @@ namespace GaokaoCountdown
                 }
                 if (!_enableSettingsAnimations) return;
                 // 有动画时仍需做入场
-                double w0 = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
-                SlideIn(_tabContents[newIndex], 1, w0);
+                double h0 = ContentHost.ActualHeight > 0 ? ContentHost.ActualHeight : 600;
+                SlideIn(_tabContents[newIndex], 1, h0);
                 return;
             }
 
@@ -224,11 +224,11 @@ namespace GaokaoCountdown
                 return;
             }
 
-            // 方向：向右切 +1（新页从右侧滑入，旧页向左滑出）
+            // 方向：向下切 +1（新页从下方滑入，旧页向上滑出）
             int direction = oldIndex < 0 ? 1 : (newIndex > oldIndex ? 1 : -1);
 
-            // 获取容器宽度作为位移距离（保证新页在视口外起步）
-            double panelWidth = ContentHost.ActualWidth > 0 ? ContentHost.ActualWidth : 400;
+            // 获取容器高度作为位移距离（保证新页在视口外起步）
+            double panelHeight = ContentHost.ActualHeight > 0 ? ContentHost.ActualHeight : 600;
 
             ScrollViewer newSv = _tabContents[newIndex];
 
@@ -246,12 +246,12 @@ namespace GaokaoCountdown
                 if (oldSv != newSv)
                 {
                     _outgoingPanel = oldSv;
-                    SlideOut(oldSv, direction, panelWidth);
+                    SlideOut(oldSv, direction, panelHeight);
                 }
             }
 
             // 新页滑入（同步开始，同步时长）
-            SlideIn(newSv, direction, panelWidth);
+            SlideIn(newSv, direction, panelHeight);
         }
 
         /// <summary>强制立即折叠并重置面板状态</summary>
@@ -259,31 +259,31 @@ namespace GaokaoCountdown
         {
             sv.BeginAnimation(UIElement.OpacityProperty, null);
             if (sv.RenderTransform is TranslateTransform tt)
-                tt.BeginAnimation(TranslateTransform.XProperty, null);
+                tt.BeginAnimation(TranslateTransform.YProperty, null);
             sv.Visibility = Visibility.Collapsed;
             sv.Opacity    = 1;
-            if (sv.RenderTransform is TranslateTransform tt2) tt2.X = 0;
+            if (sv.RenderTransform is TranslateTransform tt2) tt2.Y = 0;
         }
 
-        // 0.3s 快切避免重影，Power EaseOut 保持丝滑
-        private static readonly Duration SlideTime = new Duration(TimeSpan.FromSeconds(0.3));
+        // 纵向滑动动画（Tab 上下切换）
+        private static readonly Duration SlideTime = new Duration(TimeSpan.FromSeconds(0.5));
         private static readonly IEasingFunction SlideEase =
             new PowerEase { Power = 3, EasingMode = EasingMode.EaseOut };
 
-        /// <summary>新页面滑入：从视口外平移 + 淡入</summary>
-        private static void SlideIn(ScrollViewer sv, int direction, double width)
+        /// <summary>新页面滑入：从视口外纵向平移 + 淡入</summary>
+        private static void SlideIn(ScrollViewer sv, int direction, double height)
         {
             EnsureTranslate(sv);
 
             sv.BeginAnimation(UIElement.OpacityProperty, null);
-            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.YProperty, null);
 
-            double startX = direction >= 0 ? width : -width;
-            ((TranslateTransform)sv.RenderTransform).X = startX;
+            double startY = direction >= 0 ? height : -height;
+            ((TranslateTransform)sv.RenderTransform).Y = startY;
             sv.Opacity = 0;
             sv.Visibility = Visibility.Visible;
 
-            var xAnim = new DoubleAnimation(startX, 0, SlideTime)
+            var yAnim = new DoubleAnimation(startY, 0, SlideTime)
             {
                 EasingFunction = SlideEase,
                 FillBehavior = FillBehavior.Stop
@@ -292,33 +292,33 @@ namespace GaokaoCountdown
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
             };
-            xAnim.Completed += (_, _) =>
+            yAnim.Completed += (_, _) =>
             {
-                ((TranslateTransform)sv.RenderTransform).X = 0;
-                ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
+                ((TranslateTransform)sv.RenderTransform).Y = 0;
+                ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.YProperty, null);
             };
-            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, xAnim);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.YProperty, yAnim);
             sv.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
         }
 
-        /// <summary>旧页面滑出：平移 + 淡出，完成后折叠</summary>
-        private void SlideOut(ScrollViewer sv, int direction, double width)
+        /// <summary>旧页面滑出：纵向平移 + 淡出，完成后折叠</summary>
+        private void SlideOut(ScrollViewer sv, int direction, double height)
         {
             EnsureTranslate(sv);
 
             sv.BeginAnimation(UIElement.OpacityProperty, null);
-            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, null);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.YProperty, null);
 
-            double endX = direction >= 0 ? -width : width;
-            ((TranslateTransform)sv.RenderTransform).X = 0;
+            double endY = direction >= 0 ? -height : height;
+            ((TranslateTransform)sv.RenderTransform).Y = 0;
             sv.Opacity = 1;
 
-            var xAnim = new DoubleAnimation(0, endX, SlideTime) { EasingFunction = SlideEase };
+            var yAnim = new DoubleAnimation(0, endY, SlideTime) { EasingFunction = SlideEase };
             var opacityAnim = new DoubleAnimation(1, 0, SlideTime)
             {
                 EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
             };
-            xAnim.Completed += (_, _) =>
+            yAnim.Completed += (_, _) =>
             {
                 if (_outgoingPanel == sv)
                 {
@@ -326,7 +326,7 @@ namespace GaokaoCountdown
                     _outgoingPanel = null;
                 }
             };
-            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.XProperty, xAnim);
+            ((TranslateTransform)sv.RenderTransform).BeginAnimation(TranslateTransform.YProperty, yAnim);
             sv.BeginAnimation(UIElement.OpacityProperty, opacityAnim);
         }
 
