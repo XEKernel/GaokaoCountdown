@@ -179,6 +179,7 @@ namespace GaokaoCountdown
         }
         public bool   HideWhenMaximized { get => settings.HideWhenMaximized; set => settings.HideWhenMaximized = value; }
         public bool   HideDuringClass { get => settings.HideDuringClass; set => settings.HideDuringClass = value; }
+        public string HideSubjects    { get => settings.HideSubjects;    set => settings.HideSubjects    = value; }
 
         // ── 课表栏 & 提醒 & 考试模式代理属性 ─────────────────
         public bool   ShowScheduleBar         { get => settings.ShowScheduleBar;         set => settings.ShowScheduleBar         = value; }
@@ -670,8 +671,17 @@ namespace GaokaoCountdown
         // ══════════════════════════════════════════════════════
         private void UpdateCountdown()
         {
-            // ── 上课期间隐藏主窗口（可设置）──
-            bool isInClass   = settings.HideDuringClass && _scheduleManager?.GetCurrentEntry(DateTime.Now) != null;
+            // ── 上课期间隐藏主窗口（可设置科目白名单）──
+            var curEntry = _scheduleManager?.GetCurrentEntry(DateTime.Now);
+            bool isInClass = settings.HideDuringClass && curEntry != null;
+            // HideSubjects 非空时只隐藏匹配科目，为空则所有科目都隐藏
+            if (isInClass && !string.IsNullOrWhiteSpace(settings.HideSubjects))
+            {
+                var hiddenSet = settings.HideSubjects
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                isInClass = curEntry != null && hiddenSet.Contains(curEntry.Subject);
+            }
             bool isInExam    = _examModeWindow != null;
             bool shouldHide  = isInClass || isInExam;
 

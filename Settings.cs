@@ -127,6 +127,8 @@ namespace GaokaoCountdown
         public bool HideWhenMaximized { get; set; } = false;
         // 上课期间隐藏高考倒计时主窗口
         public bool HideDuringClass { get; set; } = true;
+        // 上课时隐藏窗口的科目列表（逗号分隔，如"数学,物理"），空=所有科目都隐藏
+        public string HideSubjects { get; set; } = "";
 
         // ── 课表栏 ────────────────────────────────────────────
         public bool   ShowScheduleBar          { get; set; } = false;

@@ -733,7 +733,7 @@ namespace GaokaoCountdown
             SetExpanded();
         }
 
-        /// <summary>提醒时临时展开 10 秒，之后若仍在课上则恢复紧凑</summary>
+        /// <summary>提醒时临时展开（ClassEnd 延迟 2 分钟后展开，给老师留操作窗口）</summary>
         public void ExpandOnReminder(ReminderType type)
         {
             if (!_isCompact) return;
@@ -747,6 +747,25 @@ namespace GaokaoCountdown
                 _ => false
             };
             if (!shouldExpand) return;
+
+            // 下课延迟 2 分钟再展开（老师需要操作 PPT/关窗口）
+            if (type == ReminderType.ClassEnd)
+            {
+                _expandTimer?.Stop();
+                _expandTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
+                _expandTimer.Tick += (_, _) =>
+                {
+                    _expandTimer?.Stop();
+                    _expandTimer = null;
+                    SetExpanded();
+                    // 展开 10 秒后若仍无课则自动收缩
+                    _expandTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(10) };
+                    _expandTimer.Tick += AutoCompact;
+                    _expandTimer.Start();
+                };
+                _expandTimer.Start();
+                return;
+            }
 
             SetExpanded();
             _expandTimer?.Stop();

@@ -1014,11 +1014,14 @@
                                               Content="上课/考试时自动隐藏倒计时窗口"
                                               Margin="0,6,0,0"/>
                                     <TextBlock FontSize="11" Foreground="#66CCCCDD"
-                                               Margin="20,0,0,0" TextWrapping="Wrap">
+                                               Margin="20,0,0,4" TextWrapping="Wrap">
                                         <Run Text="前台窗口最大化时自动隐藏倒计时，恢复时重新显示。"/>
                                         <LineBreak/>
                                         <Run Text="不影响托盘右键显示/隐藏功能。"/>
                                     </TextBlock>
+                                    <TextBlock Text="仅对以下科目隐藏（逗号分隔，留空则全部隐藏）" Margin="0,8,0,2"/>
+                                    <TextBox x:Name="HideSubjectsBox" Width="200"
+                                             ToolTip="输入科目名，逗号分隔，如：数学,物理,英语"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

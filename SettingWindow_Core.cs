@@ -407,6 +407,7 @@ namespace GaokaoCountdown
             AutoStartCheck.IsChecked   = MainWindow.GetAutoStartFromRegistry();
             HideWhenMaximizedCheck.IsChecked = _mainWindow.HideWhenMaximized;
             HideDuringClassCheck.IsChecked = _mainWindow.HideDuringClass;
+            HideSubjectsBox.Text = _mainWindow.HideSubjects;
 
             // ── 显示 ──────────────────────────────────────────
             ShowEnglishCheck.IsChecked      = _mainWindow.ShowEnglishLine;
@@ -604,6 +605,7 @@ namespace GaokaoCountdown
             // HideWhenMaximized 在 CheckBox 事件中实时生效，此处同步 settings 字段
             _mainWindow.HideWhenMaximized = HideWhenMaximizedCheck.IsChecked == true;
             _mainWindow.HideDuringClass = HideDuringClassCheck.IsChecked == true;
+            _mainWindow.HideSubjects    = HideSubjectsBox.Text.Trim();
 
             // ── 显示 ──────────────────────────────────────────
             _mainWindow.ShowEnglishLine       = ShowEnglishCheck.IsChecked == true;
