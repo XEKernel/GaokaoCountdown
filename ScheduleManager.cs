@@ -37,13 +37,17 @@ namespace GaokaoCountdown
                 .ToList();
         }
 
-        /// <summary>获取当前正在上的课（当前时间在 [start, end] 之间），无则返回 null</summary>
+        /// <summary>获取当前正在上的课（含提前2分钟预备铃），无则返回 null</summary>
         public ScheduleEntry? GetCurrentEntry(DateTime? now = null)
         {
             var dt = now ?? DateTime.Now;
             var tod = dt.TimeOfDay;
+            // 预备铃提前2分钟，老师即到，进入上课模式
+            // 重叠时优先高节次（下一节的预备铃覆盖上一节的末尾）
             return GetTodayEntries(dt.Date)
-                .FirstOrDefault(e => tod >= e.StartTime && tod < e.EndTime);
+                .Where(e => tod >= e.StartTime - TimeSpan.FromMinutes(2) && tod < e.EndTime)
+                .OrderByDescending(e => e.Period)
+                .FirstOrDefault();
         }
 
         /// <summary>获取下一节课（当前时间之后，今天还没开始的最近一节），无则返回 null</summary>
