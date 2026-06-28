@@ -198,6 +198,8 @@ namespace GaokaoCountdown
         public bool   RemindNextClassSoon     { get => settings.RemindNextClassSoon;     set => settings.RemindNextClassSoon     = value; }
         public bool   RemindDayEnd            { get => settings.RemindDayEnd;            set => settings.RemindDayEnd            = value; }
         public bool   RemindSpecialPeriod     { get => settings.RemindSpecialPeriod;     set => settings.RemindSpecialPeriod     = value; }
+        public int    CountdownExpandSeconds  { get => settings.CountdownExpandSeconds;  set => settings.CountdownExpandSeconds  = value; }
+        public bool   EnableCountdownSound    { get => settings.EnableCountdownSound;    set => settings.EnableCountdownSound    = value; }
         public bool   EnableExamMode          { get => settings.EnableExamMode;          set => settings.EnableExamMode          = value; }
         public bool   AutoEnterExamMode       { get => settings.AutoEnterExamMode;       set => settings.AutoEnterExamMode       = value; }
         public double ExamModeFontSize        { get => settings.ExamModeFontSize;        set => settings.ExamModeFontSize        = value; }
@@ -354,11 +356,7 @@ namespace GaokaoCountdown
 
         private void OnReminder(object? sender, ReminderEventArgs e)
         {
-            // 不再使用大字覆盖层——课表栏自己处理下课倒计时/提示
-            // 所有提醒统一使用右下角 ReminderWindow
-            ReminderWindow.Show(e.Title, e.Message, e.Type);
-
-            // 触发课表栏临时展开（提醒时显示完整信息）
+            // 课表栏自己处理下课倒计时/提示，不再弹右下角提醒窗
             _scheduleBarWindow?.ExpandOnReminder(e.Type);
         }
 

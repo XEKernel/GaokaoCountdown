@@ -141,6 +141,10 @@ namespace GaokaoCountdown
         public double ScheduleBarFontSize      { get; set; } = 14;
         /// <summary>上课时课表栏自动收缩为进度条</summary>
         public bool   ScheduleBarAutoCollapse   { get; set; } = true;
+        /// <summary>下课倒计时展开秒数（30 或 60）</summary>
+        public int    CountdownExpandSeconds    { get; set; } = 30;
+        /// <summary>展开倒计时时播放提示音</summary>
+        public bool   EnableCountdownSound      { get; set; } = false;
 
         // ── 提醒开关 ──────────────────────────────────────────
         public bool EnableReminderSound  { get; set; } = true;

@@ -451,8 +451,19 @@ namespace GaokaoCountdown
             ScheduleBarOpacitySlider.Value         = _mainWindow.ScheduleBarOpacity;
             ScheduleBarOpacityLabel.Text           = $"{_mainWindow.ScheduleBarOpacity * 100:F0}%";
             ScheduleBarWidthBox.Text               = _mainWindow.ScheduleBarWidth.ToString("F0");
-            ScheduleBarFontSizeSlider.Value      = _mainWindow.ScheduleBarFontSize;
-            ScheduleBarFontSizeText.Text         = _mainWindow.ScheduleBarFontSize.ToString("F0");
+            ScheduleBarFontSizeSlider.Value       = _mainWindow.ScheduleBarFontSize;
+            ScheduleBarFontSizeText.Text          = _mainWindow.ScheduleBarFontSize.ToString("F0");
+
+            // 下课倒计时
+            for (int i = 0; i < CountdownExpandCb.Items.Count; i++)
+            {
+                if (CountdownExpandCb.Items[i] is ComboBoxItem item && item.Tag?.ToString() == _mainWindow.CountdownExpandSeconds.ToString())
+                {
+                    CountdownExpandCb.SelectedIndex = i;
+                    break;
+                }
+            }
+            EnableCountdownSoundCheck.IsChecked = _mainWindow.EnableCountdownSound;
             EnableReminderSoundCheck.IsChecked     = _mainWindow.EnableReminderSound;
             ReminderSoundPathBox.Text              = _mainWindow.ReminderSoundPath;
             RemindClassStartCheck.IsChecked        = _mainWindow.RemindClassStart;
@@ -723,6 +734,11 @@ namespace GaokaoCountdown
             _mainWindow.RemindClassEndSoon      = RemindClassEndSoonCheck.IsChecked == true;
             _mainWindow.RemindClassEnd          = RemindClassEndCheck.IsChecked == true;
             _mainWindow.RemindNextClassSoon     = RemindNextClassSoonCheck.IsChecked == true;
+
+            // 下课倒计时
+            if (CountdownExpandCb.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out int sec))
+                _mainWindow.CountdownExpandSeconds = sec;
+            _mainWindow.EnableCountdownSound = EnableCountdownSoundCheck.IsChecked == true;
             _mainWindow.RemindDayEnd            = RemindDayEndCheck.IsChecked == true;
             _mainWindow.RemindSpecialPeriod     = RemindSpecialPeriodCheck.IsChecked == true;
 

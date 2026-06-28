@@ -1615,6 +1615,18 @@
                                     <CheckBox x:Name="ScheduleBarAlwaysOnTopCheck" Content="始终置顶" Margin="0,6,0,0"/>
                                     <CheckBox x:Name="ScheduleBarClickThroughCheck" Content="鼠标点击穿透" Margin="0,4,0,0"/>
                                     <CheckBox x:Name="ScheduleBarAutoCollapseCheck" Content="上课时自动收缩为进度条（提醒时展开）" Margin="0,4,0,0"/>
+
+                                    <!-- 下课倒计时提示 -->
+                                    <TextBlock Text="下课倒计时" Style="{StaticResource SectionTitle}" Margin="0,14,0,6"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="距下课" VerticalAlignment="Center" FontSize="12" Foreground="#CCE0E0F0"/>
+                                        <ComboBox x:Name="CountdownExpandCb" Width="80" Margin="6,0,6,0">
+                                            <ComboBoxItem Content="30 秒" Tag="30"/>
+                                            <ComboBoxItem Content="60 秒" Tag="60"/>
+                                        </ComboBox>
+                                        <TextBlock Text="时展开课表栏并高亮" VerticalAlignment="Center" FontSize="12" Foreground="#88CCCCDD"/>
+                                    </StackPanel>
+                                    <CheckBox x:Name="EnableCountdownSoundCheck" Content="展开时播放提示音" Margin="0,6,0,0"/>
                                     <TextBlock Text="透明度" Margin="0,10,0,2"/>
                                     <StackPanel Orientation="Horizontal">
                                         <Slider x:Name="ScheduleBarOpacitySlider"

@@ -617,8 +617,10 @@ namespace GaokaoCountdown
                         }
                     }
 
-                    // 30 秒时自动展开课表栏，高亮提示
-                    if (remaining <= 30 && remaining >= 28 && _isCompact)
+                    // 倒计时展开秒数（可设 30s 或 60s），展开时高亮+可选提示音
+                    int expandAt = _settings.CountdownExpandSeconds;
+                    if (expandAt <= 0 || expandAt > 60) expandAt = 30;
+                    if (remaining <= expandAt && remaining >= expandAt - 2 && _isCompact)
                     {
                         SetExpanded();
                         _expandTimer?.Stop();
@@ -626,9 +628,16 @@ namespace GaokaoCountdown
                         _expandTimer.Tick += AutoCompact;
                         _expandTimer.Start();
                         Countdown60Tb.Foreground = BrOrange;
+
+                        // 提示音（可开关）
+                        if (_settings.EnableCountdownSound)
+                        {
+                            try { System.Media.SystemSounds.Asterisk.Play(); }
+                            catch { }
+                        }
                     }
 
-                    Countdown60Tb.Text = remaining <= 30
+                    Countdown60Tb.Text = remaining <= expandAt
                         ? $"⏰ 还有 {remaining}s 下课！"
                         : $"下课倒计时 {remaining}s";
                 }
